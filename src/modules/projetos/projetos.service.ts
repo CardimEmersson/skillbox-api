@@ -109,7 +109,7 @@ export class ProjetosService {
     const deleted = await this.repository.softDelete(projeto.id);
 
     if (deleted.affected !== 1) {
-      throw new NotFoundException('Categoria não foi apagada');
+      throw new NotFoundException('Projeto não foi apagado');
     }
 
     return {

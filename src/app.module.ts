@@ -8,6 +8,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { CategoriasModule } from './modules/categorias/categorias.module';
 import { ProjetosModule } from './modules/projetos/projetos.module';
 import { HabilidadesModule } from './modules/habilidades/habilidades.module';
+import { MetasModule } from './modules/metas/metas.module';
+import { CursosModule } from './modules/cursos/cursos.module';
 
 @Module({
   imports: [
@@ -30,6 +32,8 @@ import { HabilidadesModule } from './modules/habilidades/habilidades.module';
     CategoriasModule,
     ProjetosModule,
     HabilidadesModule,
+    MetasModule,
+    CursosModule,
   ],
   controllers: [AppController],
   providers: [AppService],
