@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import {
   Controller,
   Post,
@@ -29,10 +26,10 @@ import {
 import { Usuario } from './entities/usuario.entity';
 import { AuthGuard } from '@nestjs/passport';
 import { CreateUsuarioSwaggerDto } from './dto/create-usuario-swagger.dto';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { User } from 'src/auth/user.decorator';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { fileFilter, MAX_FILE_SIZE, saveImage } from 'src/utils/image';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { User } from '../auth/user.decorator';
 
 @ApiTags('Usuarios')
 @Controller('usuarios')
