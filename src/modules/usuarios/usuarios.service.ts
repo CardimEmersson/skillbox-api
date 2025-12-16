@@ -63,6 +63,10 @@ export class UsuariosService {
       }
     }
 
+    if (!dto.avatar_url) {
+      dto.avatar_url = usuario.avatar_url;
+    }
+
     Object.assign(usuario, dto);
     return this.usuarioRepository.save(usuario);
   }

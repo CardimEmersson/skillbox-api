@@ -5,6 +5,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { CreateCategoriaDto } from './dto/create-categoria.dto';
 import { UpdateCategoriaDto } from './dto/update-categoria.dto';
 import { CategoriaOutputDto } from './dto/categoria-output.dto';
+import {
+  OutputCreateUpdateDto,
+  OutputDeleteDto,
+} from 'src/utils/dto/output.dto';
 
 @Injectable()
 export class CategoriasService {
@@ -16,14 +20,14 @@ export class CategoriasService {
   async create(
     dto: CreateCategoriaDto,
     usuarioId: number,
-  ): Promise<CategoriaOutputDto> {
+  ): Promise<OutputCreateUpdateDto> {
     const categoria = this.repository.create({ ...dto, usuario_id: usuarioId });
 
     const saved = await this.repository.save(categoria);
 
     return {
       id: saved.id,
-      nome: saved.nome,
+      message: 'Categoria criada com sucesso',
     };
   }
 
@@ -49,18 +53,18 @@ export class CategoriasService {
     id: number,
     usuarioId: number,
     dto: UpdateCategoriaDto,
-  ): Promise<CategoriaOutputDto> {
+  ): Promise<OutputCreateUpdateDto> {
     const categoria = await this.findById(id, usuarioId);
     Object.assign(categoria, dto);
     const updated = await this.repository.save(categoria);
 
     return {
       id: updated.id,
-      nome: updated.nome,
+      message: 'Categoria atualizada com sucesso',
     };
   }
 
-  async remove(id: number, usuarioId: number) {
+  async remove(id: number, usuarioId: number): Promise<OutputDeleteDto> {
     const categoria = await this.repository.findOne({
       where: { id, usuario_id: usuarioId },
     });
