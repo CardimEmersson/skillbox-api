@@ -7,8 +7,10 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
+import { CursoHabilidade } from './curso-habilidade.entity';
 
 @Entity('cursos')
 export class Curso {
@@ -42,6 +44,15 @@ export class Curso {
 
   @Column({ length: 255, nullable: true })
   link?: string;
+
+  @OneToMany(
+    () => CursoHabilidade,
+    (cursoHabilidade) => cursoHabilidade.curso,
+    {
+      cascade: true,
+    },
+  )
+  habilidades: CursoHabilidade[];
 
   @CreateDateColumn()
   created_at: Date;

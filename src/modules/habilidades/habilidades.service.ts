@@ -94,16 +94,20 @@ export class HabilidadesService {
   async remove(id: number): Promise<OutputDeleteDto> {
     const habilidade = await this.repository.findOne({
       where: { id },
-      relations: ['projetos', 'metas'],
+      relations: ['projetos', 'metas', 'cursos'],
     });
 
     if (!habilidade) {
       throw new NotFoundException('Habilidade não encontrada');
     }
 
-    if (habilidade.projetos?.length > 0 || habilidade.metas?.length > 0) {
+    if (
+      habilidade.projetos?.length > 0 ||
+      habilidade.metas?.length > 0 ||
+      habilidade.cursos?.length > 0
+    ) {
       throw new BadRequestException(
-        'Não é possível excluir uma habilidade que está associada a projetos ou metas.',
+        'Não é possível excluir uma habilidade que está associada a projetos, metas ou cursos.',
       );
     }
 

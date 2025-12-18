@@ -5,6 +5,8 @@ import {
   IsDateString,
   IsInt,
   MaxLength,
+  IsArray,
+  IsNumberString,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -43,4 +45,14 @@ export class CreateCursoDto {
   @IsOptional()
   @IsString()
   link?: string;
+
+  @ApiProperty({
+    required: false,
+    type: [Number],
+    description: 'Array de IDs de habilidades a serem associadas ao curso.',
+  })
+  @IsOptional()
+  @IsArray()
+  @IsNumberString({}, { each: true })
+  habilidades?: (number | string)[];
 }

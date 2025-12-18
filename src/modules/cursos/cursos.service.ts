@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { Curso } from './entities/curso.entity';
 import { CreateCursoDto } from './dto/create-curso.dto';
 import {
@@ -9,27 +9,42 @@ import {
 } from 'src/utils/dto/output.dto';
 import { IPaginationOptions, IPaginationResult } from 'src/utils/pagination';
 import { CursoOutputDto } from './dto/curso-output.dto';
+import { CursoHabilidade } from './entities/curso-habilidade.entity';
 
 @Injectable()
 export class CursosService {
   constructor(
     @InjectRepository(Curso)
     private readonly repository: Repository<Curso>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async create(
     usuarioId: number,
     dto: CreateCursoDto,
   ): Promise<OutputCreateUpdateDto> {
-    const curso = this.repository.create({
-      ...dto,
-      usuario_id: usuarioId,
-    });
+    const cursoSalvo = await this.dataSource.transaction(
+      async (transactionalEntityManager) => {
+        const { habilidades, ...cursoDto } = dto;
 
-    const created = await this.repository.save(curso);
+        const curso = transactionalEntityManager.create(Curso, {
+          ...cursoDto,
+          usuario_id: usuarioId,
+        });
+        const cursoCriado = await transactionalEntityManager.save(curso);
+
+        await this.createHabilidadesCurso(
+          habilidades ?? [],
+          transactionalEntityManager,
+          cursoCriado,
+        );
+
+        return cursoCriado;
+      },
+    );
 
     return {
-      id: created.id,
+      id: cursoSalvo.id,
       message: 'Curso criado com sucesso',
     };
   }
@@ -37,7 +52,7 @@ export class CursosService {
   async findAll(
     usuarioId: number,
     options: IPaginationOptions,
-  ): Promise<IPaginationResult<Curso>> {
+  ): Promise<IPaginationResult<CursoOutputDto>> {
     const { page, limit } = options;
     const [data, total] = await this.repository.findAndCount({
       where: { usuario_id: usuarioId },
@@ -51,12 +66,17 @@ export class CursosService {
         'carga_horaria',
         'link',
       ],
+      relations: ['habilidades', 'habilidades.habilidade'],
       take: limit,
       skip: (page - 1) * limit,
     });
 
+    const formatedCursos: CursoOutputDto[] = data.map(
+      (curso) => new CursoOutputDto(curso),
+    );
+
     return {
-      data,
+      data: formatedCursos,
       count: total,
       totalPages: Math.ceil(total / limit),
       currentPage: page,
@@ -76,27 +96,56 @@ export class CursosService {
         'carga_horaria',
         'link',
       ],
+      relations: ['habilidades', 'habilidades.habilidade'],
     });
     if (!curso) throw new NotFoundException('Curso não encontrado');
-    return curso;
+
+    const formatedCurso = new CursoOutputDto(curso);
+
+    return formatedCurso;
   }
 
   async update(
     id: number,
     usuarioId: number,
     dto: CreateCursoDto,
+    deleteHabilidadesCurso: CursoHabilidade[],
+    createdHabilidadesCurso: (number | string)[],
   ): Promise<OutputCreateUpdateDto> {
     const curso = await this.repository.findOne({
       where: { id, usuario_id: usuarioId },
     });
 
     if (!curso) throw new NotFoundException('Curso não encontrada');
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { habilidades, ...updateData } = dto;
 
-    Object.assign(curso, dto);
-    const updated = await this.repository.save(curso);
+    Object.assign(curso, updateData);
+
+    const cursoSalvo = await this.dataSource.transaction(
+      async (transactionalEntityManager) => {
+        const cursoAtualizado = await transactionalEntityManager.save(
+          Curso,
+          curso,
+        );
+
+        await this.deleteHabilidadesCurso(
+          deleteHabilidadesCurso,
+          transactionalEntityManager,
+        );
+
+        await this.createHabilidadesCurso(
+          createdHabilidadesCurso ?? [],
+          transactionalEntityManager,
+          cursoAtualizado,
+        );
+
+        return cursoAtualizado;
+      },
+    );
 
     return {
-      id: updated.id,
+      id: cursoSalvo.id,
       message: 'Curso atualizado com sucesso',
     };
   }
@@ -110,14 +159,64 @@ export class CursosService {
       throw new NotFoundException('Curso não encontrado');
     }
 
-    const deleted = await this.repository.softDelete(curso.id);
-
-    if (deleted.affected !== 1) {
-      throw new NotFoundException('Curso não foi apagada');
-    }
+    await this.repository.softRemove(curso);
 
     return {
-      message: 'Meta apagada com sucesso',
+      message: 'Curso apagado com sucesso',
     };
+  }
+
+  private async createHabilidadesCurso(
+    habilidades: (number | string)[],
+    transactionalEntityManager: EntityManager,
+    curso: Curso,
+  ) {
+    if (habilidades && habilidades.length > 0) {
+      for (const habilidade of habilidades) {
+        const habilidadeId = Number(habilidade);
+
+        const relacaoExistente = await transactionalEntityManager.findOne(
+          CursoHabilidade,
+          {
+            where: { curso_id: curso.id, habilidade_id: habilidadeId },
+            withDeleted: true,
+          },
+        );
+
+        if (relacaoExistente?.deleted_at) {
+          await transactionalEntityManager.recover(relacaoExistente);
+        } else if (!relacaoExistente) {
+          const novaRelacao = transactionalEntityManager.create(
+            CursoHabilidade,
+            { curso_id: curso.id, habilidade_id: habilidadeId },
+          );
+          await transactionalEntityManager.save(novaRelacao);
+        }
+      }
+    }
+  }
+
+  private async deleteHabilidadesCurso(
+    habilidadesCurso: CursoHabilidade[],
+    transactionalEntityManager: EntityManager,
+  ) {
+    if (habilidadesCurso?.length) {
+      for (const habilidadeCurso of habilidadesCurso) {
+        const habilidadeCursoExistente =
+          await transactionalEntityManager.findOne(CursoHabilidade, {
+            where: {
+              habilidade_id: Number(habilidadeCurso.habilidade_id),
+              curso_id: Number(habilidadeCurso.curso_id),
+            },
+          });
+
+        if (habilidadeCursoExistente) {
+          await transactionalEntityManager.softDelete(CursoHabilidade, {
+            curso_id: habilidadeCursoExistente.curso_id,
+            habilidade_id: habilidadeCursoExistente.habilidade_id,
+          });
+        }
+      }
+    }
   }
 }

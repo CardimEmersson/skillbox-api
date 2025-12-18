@@ -16,13 +16,17 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { User } from '../auth/user.decorator';
 import { CursosService } from './cursos.service';
 import { CreateCursoDto } from './dto/create-curso.dto';
+import { CursosHabilidadesService } from './cursos-habilidades.service';
 
 @ApiTags('Cursos')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('cursos')
 export class CursosController {
-  constructor(private readonly cursoService: CursosService) {}
+  constructor(
+    private readonly cursoService: CursosService,
+    private readonly cursosHabilidadesService: CursosHabilidadesService,
+  ) {}
 
   @Post()
   create(@Body() dto: CreateCursoDto, @User('userId') usuarioId: number) {
@@ -45,12 +49,33 @@ export class CursosController {
   }
 
   @Put(':id')
-  update(
+  async update(
     @Param('id') id: number,
     @Body() dto: CreateCursoDto,
     @User('userId') usuarioId: number,
   ) {
-    return this.cursoService.update(id, usuarioId, dto);
+    const habilidadesCurso =
+      await this.cursosHabilidadesService.findAllByCurso(id);
+
+    const deleteHabilidadesCurso = habilidadesCurso?.filter(
+      (item) => !dto.habilidades?.includes(item.curso_id?.toString()),
+    );
+
+    const existingHabilidadeIds =
+      habilidadesCurso?.map((item) => item.curso_id.toString()) ?? [];
+
+    const createdHabilidadesCurso = dto.habilidades?.filter(
+      (habilidadeId) =>
+        !existingHabilidadeIds.includes(habilidadeId?.toString()),
+    );
+
+    return this.cursoService.update(
+      id,
+      usuarioId,
+      dto,
+      deleteHabilidadesCurso ?? [],
+      createdHabilidadesCurso ?? [],
+    );
   }
 
   @Delete(':id')

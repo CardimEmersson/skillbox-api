@@ -21,12 +21,9 @@ export class ProjetoOutputDto {
     this.tipo_projeto = projeto.tipo_projeto;
     this.descricao = projeto.descricao;
     this.link = projeto.link;
-    this.habilidades = projeto.habilidades?.map((habilidade) => ({
-      id: habilidade?.habilidade?.id,
-      nome: habilidade?.habilidade?.nome,
-      icone_url: habilidade?.habilidade?.icone_url,
-      nivel: habilidade?.habilidade?.nivel,
-    }));
+    this.habilidades = projeto.habilidades?.map(
+      (habilidade) => new HabilidadeOutputDto(habilidade.habilidade),
+    );
     this.imagens = projeto.imagens?.map((imagem) => ({
       id: imagem.id,
       imagem_url: `${process.env.API_URL}/${imagem.imagem_url}`,
