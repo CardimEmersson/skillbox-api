@@ -21,7 +21,7 @@ import { CreateHabilidadeDto } from './dto/create-habilidade.dto';
 import { User } from '../auth/user.decorator';
 import { CreateHabilidadeSwaggerDto } from './dto/create-habilidade-swagger.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
-import * as fs from 'fs';
+import * as fs from 'node:fs';
 import * as multer from 'multer';
 import { fileFilter, MAX_FILE_SIZE, saveImage } from 'src/utils/image';
 

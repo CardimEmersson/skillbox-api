@@ -7,9 +7,11 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
 import { TipoProjeto } from '../enums/tipo-projeto.enum';
+import { ImagemProjeto } from './imagem-projeto.entity';
 
 @Entity('projetos')
 export class Projeto {
@@ -44,6 +46,9 @@ export class Projeto {
 
   @Column({ length: 255, nullable: true })
   link?: string;
+
+  @OneToMany(() => ImagemProjeto, (imagem) => imagem.projeto, { cascade: true })
+  imagens: ImagemProjeto[];
 
   @CreateDateColumn()
   created_at: Date;
