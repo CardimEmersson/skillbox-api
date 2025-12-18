@@ -6,4 +6,9 @@ export class CategoriaOutputDto {
 
   @ApiProperty({ description: 'Nome da categoria' })
   nome: string;
+
+  constructor(categoria: CategoriaOutputDto) {
+    this.id = categoria.id;
+    this.nome = categoria.nome;
+  }
 }

@@ -24,13 +24,17 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import * as fs from 'node:fs';
 import * as multer from 'multer';
 import { fileFilter, MAX_FILE_SIZE, saveImage } from 'src/utils/image';
+import { CategoriasHabilidadesService } from '../categorias/categorias-habilidades.service';
 
 @ApiTags('Habilidades')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('habilidades')
 export class HabilidadesController {
-  constructor(private readonly habilidadesService: HabilidadesService) {}
+  constructor(
+    private readonly habilidadesService: HabilidadesService,
+    private readonly categoriasHabilidadesService: CategoriasHabilidadesService,
+  ) {}
 
   @Post()
   @ApiConsumes('multipart/form-data')
@@ -102,7 +106,27 @@ export class HabilidadesController {
       dto.icone = `uploads/habilidades/${filename}`;
     }
 
-    return this.habilidadesService.update(id, usuarioId, dto);
+    const categoriasHabilidade =
+      await this.categoriasHabilidadesService.findAllByHabilidade(id);
+
+    const deleteCategoriasHabilidade = categoriasHabilidade?.filter(
+      (item) => !dto.categorias?.includes(item.habilidade_id?.toString()),
+    );
+
+    const existingCategoriaIds =
+      categoriasHabilidade?.map((item) => item.habilidade_id.toString()) ?? [];
+
+    const createdCategoriasHabilidade = dto.categorias?.filter(
+      (categoriaId) => !existingCategoriaIds.includes(categoriaId?.toString()),
+    );
+
+    return this.habilidadesService.update(
+      id,
+      usuarioId,
+      dto,
+      deleteCategoriasHabilidade ?? [],
+      createdCategoriasHabilidade ?? [],
+    );
   }
 
   @Delete(':id')

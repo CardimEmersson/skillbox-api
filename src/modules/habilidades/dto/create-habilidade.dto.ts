@@ -1,4 +1,11 @@
-import { IsString, IsOptional, IsEnum, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsEnum,
+  MaxLength,
+  IsArray,
+  IsNumberString,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { NivelHabilidade } from '../enums/nivel-habilidade.enum';
 
@@ -17,4 +24,14 @@ export class CreateHabilidadeDto {
   @IsOptional()
   @IsEnum(NivelHabilidade)
   nivel?: NivelHabilidade;
+
+  @ApiProperty({
+    required: false,
+    type: [Number],
+    description: 'Array de IDs de categorias a serem associadas a habilidade.',
+  })
+  @IsOptional()
+  @IsArray()
+  @IsNumberString({}, { each: true })
+  categorias?: (number | string)[];
 }

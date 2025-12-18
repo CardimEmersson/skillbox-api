@@ -15,6 +15,7 @@ import { Exclude, Expose } from 'class-transformer';
 import { ProjetoHabilidade } from '../../projetos/entities/projeto-habilidade.entity';
 import { MetaHabilidade } from '../../metas/entities/meta-habilidade.entity';
 import { CursoHabilidade } from '../../cursos/entities/curso-habilidade.entity';
+import { CategoriaHabilidade } from '../../categorias/entities/categoria-habilidade.entity';
 
 @Entity('habilidades')
 export class Habilidade {
@@ -65,6 +66,15 @@ export class Habilidade {
     (cursoHabilidade) => cursoHabilidade.habilidade,
   )
   cursos: CursoHabilidade[];
+
+  @OneToMany(
+    () => CategoriaHabilidade,
+    (categoriaHabilidade) => categoriaHabilidade.habilidade,
+    {
+      cascade: true,
+    },
+  )
+  categorias: CategoriaHabilidade[];
 
   @CreateDateColumn()
   created_at: Date;

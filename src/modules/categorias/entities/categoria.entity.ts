@@ -7,9 +7,11 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
+  OneToMany,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
+import { CategoriaHabilidade } from './categoria-habilidade.entity';
 
 @Entity('categorias')
 export class Categoria {
@@ -28,6 +30,12 @@ export class Categoria {
   @ManyToOne(() => Usuario, { eager: false })
   @JoinColumn({ name: 'usuario_id' })
   usuario: Usuario;
+
+  @OneToMany(
+    () => CategoriaHabilidade,
+    (categoriaHabilidade) => categoriaHabilidade.categoria,
+  )
+  habilidades: CategoriaHabilidade[];
 
   @CreateDateColumn({ name: 'created_at' })
   created_at: Date;

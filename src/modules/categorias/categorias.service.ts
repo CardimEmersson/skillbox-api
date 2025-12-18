@@ -67,15 +67,18 @@ export class CategoriasService {
   async remove(id: number, usuarioId: number): Promise<OutputDeleteDto> {
     const categoria = await this.repository.findOne({
       where: { id, usuario_id: usuarioId },
+      relations: ['habilidades'],
     });
 
     if (!categoria) throw new NotFoundException('Categoria não encontrada');
 
-    const deleted = await this.repository.softDelete(categoria.id);
-
-    if (deleted.affected !== 1) {
-      throw new NotFoundException('Categoria não foi apagada');
+    if (categoria.habilidades?.length > 0) {
+      throw new NotFoundException(
+        'Não é possível excluir uma categoria que está associada a habilidades.',
+      );
     }
+
+    await this.repository.softRemove(categoria);
 
     return {
       message: 'Categoria apagada com sucesso',
