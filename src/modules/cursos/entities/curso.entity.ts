@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
 import { CursoHabilidade } from './curso-habilidade.entity';
+import { ProjetoCurso } from '../../projetos/entities/projeto-curso.entity';
 
 @Entity('cursos')
 export class Curso {
@@ -53,6 +54,11 @@ export class Curso {
     },
   )
   habilidades: CursoHabilidade[];
+
+  @OneToMany(() => ProjetoCurso, (projetoCurso) => projetoCurso.curso, {
+    cascade: true,
+  })
+  projetos: ProjetoCurso[];
 
   @CreateDateColumn()
   created_at: Date;

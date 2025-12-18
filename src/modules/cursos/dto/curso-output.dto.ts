@@ -21,7 +21,7 @@ export class CursoOutputDto {
     this.carga_horaria = curso.carga_horaria;
     this.instructor = curso.instructor;
     this.link = curso.link;
-    this.habilidades = curso.habilidades.map(
+    this.habilidades = curso.habilidades?.map(
       (habilidade) => new HabilidadeOutputDto(habilidade.habilidade),
     );
   }

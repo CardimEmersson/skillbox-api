@@ -12,6 +12,7 @@ import { IPaginationOptions, IPaginationResult } from 'src/utils/pagination';
 import { ImagemProjeto } from './entities/imagem-projeto.entity';
 import { UpdateProjetoDto } from './dto/update-projeto.dto';
 import { ProjetoHabilidade } from './entities/projeto-habilidade.entity';
+import { ProjetoCurso } from './entities/projeto-curso.entity';
 
 @Injectable()
 export class ProjetosService {
@@ -28,7 +29,7 @@ export class ProjetosService {
   ): Promise<OutputCreateUpdateDto> {
     const projetoSalvo = await this.dataSource.transaction(
       async (transactionalEntityManager) => {
-        const { habilidades, ...projetoDto } = dto;
+        const { habilidades, cursos, ...projetoDto } = dto;
 
         const projeto = transactionalEntityManager.create(Projeto, {
           ...projetoDto,
@@ -44,6 +45,12 @@ export class ProjetosService {
 
         await this.createHabilidadesProjeto(
           habilidades ?? [],
+          transactionalEntityManager,
+          projetoCriado,
+        );
+
+        await this.createCursosProjeto(
+          cursos ?? [],
           transactionalEntityManager,
           projetoCriado,
         );
@@ -73,9 +80,24 @@ export class ProjetosService {
         'descricao',
         'link',
       ],
-      relations: ['imagens', 'habilidades', 'habilidades.habilidade'],
+      relations: [
+        'imagens',
+        'habilidades',
+        'habilidades.habilidade',
+        'cursos',
+        'cursos.curso',
+      ],
       take: limit,
       skip: (page - 1) * limit,
+    });
+
+    data.forEach((projeto) => {
+      if (projeto.habilidades) {
+        projeto.habilidades = projeto.habilidades.filter((ph) => ph.habilidade);
+      }
+      if (projeto.cursos) {
+        projeto.cursos = projeto.cursos.filter((pc) => pc.curso);
+      }
     });
 
     const formattedData = data.map((projeto) => new ProjetoOutputDto(projeto));
@@ -91,9 +113,23 @@ export class ProjetosService {
   async findById(id: number, usuarioId: number): Promise<ProjetoOutputDto> {
     const projeto = await this.repository.findOne({
       where: { id, usuario_id: usuarioId },
-      relations: ['imagens', 'habilidades', 'habilidades.habilidade'],
+      relations: [
+        'imagens',
+        'habilidades',
+        'habilidades.habilidade',
+        'cursos',
+        'cursos.curso',
+      ],
     });
     if (!projeto) throw new NotFoundException('Projeto não encontrado');
+
+    if (projeto.habilidades) {
+      projeto.habilidades = projeto.habilidades.filter((ph) => ph.habilidade);
+    }
+
+    if (projeto.cursos) {
+      projeto.cursos = projeto.cursos.filter((ch) => ch.curso);
+    }
 
     const formatedProjetos = new ProjetoOutputDto(projeto);
 
@@ -107,6 +143,8 @@ export class ProjetosService {
     urlImagens: string[],
     deleteHabilidadesProjeto: ProjetoHabilidade[],
     createdHabilidadesProjeto: (number | string)[],
+    deleteCursosProjeto: ProjetoCurso[],
+    createdCursosProjeto: (number | string)[],
   ): Promise<OutputCreateUpdateDto> {
     const projeto = await this.repository.findOne({
       where: { id, usuario_id: usuarioId },
@@ -144,6 +182,17 @@ export class ProjetosService {
           projetoAtualizado,
         );
 
+        await this.deleteCursosProjeto(
+          deleteCursosProjeto,
+          transactionalEntityManager,
+        );
+
+        await this.createCursosProjeto(
+          createdCursosProjeto ?? [],
+          transactionalEntityManager,
+          projetoAtualizado,
+        );
+
         return projetoAtualizado;
       },
     );
@@ -156,7 +205,7 @@ export class ProjetosService {
   async remove(id: number, usuarioId: number): Promise<OutputDeleteDto> {
     const projeto = await this.repository.findOne({
       where: { id, usuario_id: usuarioId },
-      relations: ['imagens', 'habilidades'],
+      relations: ['imagens', 'habilidades', 'cursos'],
     });
 
     if (!projeto) throw new NotFoundException('Projeto não encontrado');
@@ -274,6 +323,62 @@ export class ProjetosService {
           await transactionalEntityManager.softDelete(ProjetoHabilidade, {
             projeto_id: habilidadeProjetoExistente.projeto_id,
             habilidade_id: habilidadeProjetoExistente.habilidade_id,
+          });
+        }
+      }
+    }
+  }
+
+  private async createCursosProjeto(
+    cursos: (number | string)[],
+    transactionalEntityManager: EntityManager,
+    projeto: Projeto,
+  ) {
+    if (cursos && cursos.length > 0) {
+      for (const curso of cursos) {
+        const cursoId = Number(curso);
+
+        const relacaoExistente = await transactionalEntityManager.findOne(
+          ProjetoCurso,
+          {
+            where: { projeto_id: projeto.id, curso_id: cursoId },
+            withDeleted: true,
+          },
+        );
+
+        if (relacaoExistente?.deleted_at) {
+          await transactionalEntityManager.recover(relacaoExistente);
+        } else if (!relacaoExistente) {
+          const novaRelacao = transactionalEntityManager.create(ProjetoCurso, {
+            projeto_id: projeto.id,
+            curso_id: cursoId,
+          });
+          await transactionalEntityManager.save(novaRelacao);
+        }
+      }
+    }
+  }
+
+  private async deleteCursosProjeto(
+    cursosProjeto: ProjetoCurso[],
+    transactionalEntityManager: EntityManager,
+  ) {
+    if (cursosProjeto?.length) {
+      for (const cursoProjeto of cursosProjeto) {
+        const cursoProjetoExistente = await transactionalEntityManager.findOne(
+          ProjetoCurso,
+          {
+            where: {
+              curso_id: Number(cursoProjeto.curso_id),
+              projeto_id: Number(cursoProjeto.projeto_id),
+            },
+          },
+        );
+
+        if (cursoProjetoExistente) {
+          await transactionalEntityManager.softDelete(ProjetoCurso, {
+            projeto_id: cursoProjetoExistente.projeto_id,
+            curso_id: cursoProjetoExistente.curso_id,
           });
         }
       }

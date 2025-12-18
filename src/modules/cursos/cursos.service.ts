@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, Repository } from 'typeorm';
 import { Curso } from './entities/curso.entity';
@@ -153,10 +157,17 @@ export class CursosService {
   async remove(id: number, usuarioId: number): Promise<OutputDeleteDto> {
     const curso = await this.repository.findOne({
       where: { id, usuario_id: usuarioId },
+      relations: ['projetos'],
     });
 
     if (!curso) {
       throw new NotFoundException('Curso não encontrado');
+    }
+
+    if (curso.projetos?.length > 0) {
+      throw new BadRequestException(
+        'Não é possível excluir um curso que está associado a um projeto',
+      );
     }
 
     await this.repository.softRemove(curso);

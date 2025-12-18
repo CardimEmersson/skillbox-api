@@ -8,6 +8,9 @@ import { ImagensProjetosService } from './imagens-projetos.service';
 import { ProjetoHabilidade } from './entities/projeto-habilidade.entity';
 import { ProjetosHabilidadesService } from './projetos-habilidades.service';
 import { Habilidade } from '../habilidades/entities/habilidade.entity';
+import { ProjetoCurso } from './entities/projeto-curso.entity';
+import { Curso } from '../cursos/entities/curso.entity';
+import { ProjetosCursosService } from './projetos-cursos.service';
 
 @Module({
   imports: [
@@ -16,12 +19,15 @@ import { Habilidade } from '../habilidades/entities/habilidade.entity';
       ImagemProjeto,
       ProjetoHabilidade,
       Habilidade,
+      ProjetoCurso,
+      Curso,
     ]),
   ],
   controllers: [ProjetosController],
   providers: [
     ProjetosService,
     ImagensProjetosService,
+    ProjetosCursosService,
     ProjetosHabilidadesService,
   ],
 })

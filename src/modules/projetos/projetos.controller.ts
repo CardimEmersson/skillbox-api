@@ -27,6 +27,9 @@ import { UpdateProjetoDto } from './dto/update-projeto.dto';
 import { ImagensProjetosService } from './imagens-projetos.service';
 import { ImagemProjeto } from './entities/imagem-projeto.entity';
 import { ProjetosHabilidadesService } from './projetos-habilidades.service';
+import { ProjetoHabilidade } from './entities/projeto-habilidade.entity';
+import { ProjetoCurso } from './entities/projeto-curso.entity';
+import { ProjetosCursosService } from './projetos-cursos.service';
 
 @ApiTags('Projetos')
 @ApiBearerAuth()
@@ -37,6 +40,7 @@ export class ProjetosController {
     private readonly projetosService: ProjetosService,
     private readonly imagensProjetosService: ImagensProjetosService,
     private readonly projetoHabilidadesService: ProjetosHabilidadesService,
+    private readonly projetoCursosService: ProjetosCursosService,
   ) {}
 
   @Post()
@@ -129,20 +133,11 @@ export class ProjetosController {
 
       urlImagensNovas = this.createImagensProjeto(imagens);
 
-      const habilidadesProjeto =
-        await this.projetoHabilidadesService.findAllByProjeto(id);
+      const { deleteHabilidadesProjeto, createdHabilidadesProjeto } =
+        await this.handleHabilidadesProjeto(id, dto);
 
-      const deleteHabilidadesProjeto = habilidadesProjeto?.filter(
-        (item) => !dto.habilidades?.includes(item.habilidade_id?.toString()),
-      );
-
-      const existingHabilidadeIds =
-        habilidadesProjeto?.map((item) => item.habilidade_id.toString()) ?? [];
-
-      const createdHabilidadesProjeto = dto.habilidades?.filter(
-        (habilidadeId) =>
-          !existingHabilidadeIds.includes(habilidadeId?.toString()),
-      );
+      const { deleteCursosProjeto, createdCursosProjeto } =
+        await this.handleCursosProjeto(id, dto);
 
       const updated = await this.projetosService.update(
         id,
@@ -151,6 +146,8 @@ export class ProjetosController {
         urlImagensNovas,
         deleteHabilidadesProjeto ?? [],
         createdHabilidadesProjeto ?? [],
+        deleteCursosProjeto ?? [],
+        createdCursosProjeto ?? [],
       );
 
       // apaga as imagens antigas
@@ -222,5 +219,60 @@ export class ProjetosController {
         fs.unlinkSync(imagem.imagem_url);
       }
     }
+  }
+
+  private async handleHabilidadesProjeto(
+    projetoId: number,
+    dto: UpdateProjetoDto,
+  ): Promise<{
+    deleteHabilidadesProjeto: ProjetoHabilidade[];
+    createdHabilidadesProjeto: (string | number)[] | undefined;
+  }> {
+    const habilidadesProjeto =
+      await this.projetoHabilidadesService.findAllByProjeto(projetoId);
+
+    const deleteHabilidadesProjeto = habilidadesProjeto?.filter(
+      (item) => !dto.habilidades?.includes(item.habilidade_id?.toString()),
+    );
+
+    const existingHabilidadeIds =
+      habilidadesProjeto?.map((item) => item.habilidade_id.toString()) ?? [];
+
+    const createdHabilidadesProjeto = dto.habilidades?.filter(
+      (habilidadeId) =>
+        !existingHabilidadeIds.includes(habilidadeId?.toString()),
+    );
+
+    return {
+      deleteHabilidadesProjeto,
+      createdHabilidadesProjeto,
+    };
+  }
+
+  private async handleCursosProjeto(
+    projetoId: number,
+    dto: UpdateProjetoDto,
+  ): Promise<{
+    deleteCursosProjeto: ProjetoCurso[];
+    createdCursosProjeto: (string | number)[] | undefined;
+  }> {
+    const cursosProjeto =
+      await this.projetoCursosService.findAllByProjeto(projetoId);
+
+    const deleteCursosProjeto = cursosProjeto?.filter(
+      (item) => !dto.cursos?.includes(item.curso_id?.toString()),
+    );
+
+    const existingCursoIds =
+      cursosProjeto?.map((item) => item.curso_id.toString()) ?? [];
+
+    const createdCursosProjeto = dto.cursos?.filter(
+      (cursoId) => !existingCursoIds.includes(cursoId?.toString()),
+    );
+
+    return {
+      deleteCursosProjeto,
+      createdCursosProjeto,
+    };
   }
 }

@@ -1,6 +1,7 @@
 import { HabilidadeOutputDto } from 'src/modules/habilidades/dto/habilidade-output.dto';
-import { ImagemProjetoOutputDto } from './imagem-projeto-output.dto';
 import { Projeto } from '../entities/projeto.entity';
+import { ImagemProjetoOutputDto } from './imagem-projeto-output.dto';
+import { ProjetoCursoOutputDto } from './projeto-curso-output.dto';
 
 export class ProjetoOutputDto {
   id: number;
@@ -12,6 +13,7 @@ export class ProjetoOutputDto {
   link?: string;
   imagens: Partial<ImagemProjetoOutputDto>[];
   habilidades: Partial<HabilidadeOutputDto>[];
+  cursos: Partial<ProjetoCursoOutputDto>[];
 
   constructor(projeto: Projeto) {
     this.id = projeto.id;
@@ -23,6 +25,9 @@ export class ProjetoOutputDto {
     this.link = projeto.link;
     this.habilidades = projeto.habilidades?.map(
       (habilidade) => new HabilidadeOutputDto(habilidade.habilidade),
+    );
+    this.cursos = projeto.cursos?.map(
+      (curso) => new ProjetoCursoOutputDto(curso.curso),
     );
     this.imagens = projeto.imagens?.map((imagem) => ({
       id: imagem.id,

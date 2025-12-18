@@ -60,4 +60,14 @@ export class CreateProjetoSwaggerDto {
   @IsArray()
   @IsNumberString({}, { each: true })
   habilidades?: (number | string)[];
+
+  @ApiProperty({
+    required: false,
+    type: [Number],
+    description: 'Array de IDs de cursos a serem associadas ao projeto.',
+  })
+  @IsOptional()
+  @IsArray()
+  @IsNumberString({}, { each: true })
+  cursos?: (number | string)[];
 }

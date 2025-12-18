@@ -13,6 +13,7 @@ import { Usuario } from '../../usuarios/entities/usuario.entity';
 import { TipoProjeto } from '../enums/tipo-projeto.enum';
 import { ImagemProjeto } from './imagem-projeto.entity';
 import { ProjetoHabilidade } from './projeto-habilidade.entity';
+import { ProjetoCurso } from './projeto-curso.entity';
 
 @Entity('projetos')
 export class Projeto {
@@ -57,6 +58,11 @@ export class Projeto {
     { cascade: true },
   )
   habilidades: ProjetoHabilidade[];
+
+  @OneToMany(() => ProjetoCurso, (projetoCurso) => projetoCurso.projeto, {
+    cascade: true,
+  })
+  cursos: ProjetoCurso[];
 
   @CreateDateColumn()
   created_at: Date;
