@@ -4,6 +4,8 @@ import {
   IsEnum,
   IsDateString,
   MaxLength,
+  IsArray,
+  IsNumberString,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { StatusMeta } from '../enums/status-meta.enum';
@@ -28,4 +30,14 @@ export class CreateMetaDto {
   @IsOptional()
   @IsEnum(StatusMeta)
   status?: StatusMeta;
+
+  @ApiProperty({
+    required: false,
+    type: [Number],
+    description: 'Array de IDs de habilidades a serem associadas a meta.',
+  })
+  @IsOptional()
+  @IsArray()
+  @IsNumberString({}, { each: true })
+  habilidades?: (number | string)[];
 }

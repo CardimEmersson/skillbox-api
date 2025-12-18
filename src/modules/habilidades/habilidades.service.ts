@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Habilidade } from './entities/habilidade.entity';
@@ -88,14 +92,25 @@ export class HabilidadesService {
   }
 
   async remove(id: number): Promise<OutputDeleteDto> {
-    const deleted = await this.repository.softDelete(id);
+    const habilidade = await this.repository.findOne({
+      where: { id },
+      relations: ['projetos', 'metas'],
+    });
 
-    if (deleted.affected !== 1) {
-      throw new NotFoundException('Habilidade não foi apagada');
+    if (!habilidade) {
+      throw new NotFoundException('Habilidade não encontrada');
     }
 
+    if (habilidade.projetos?.length > 0 || habilidade.metas?.length > 0) {
+      throw new BadRequestException(
+        'Não é possível excluir uma habilidade que está associada a projetos ou metas.',
+      );
+    }
+
+    await this.repository.softRemove(habilidade);
+
     return {
-      message: 'Habilidade apagado com sucesso',
+      message: 'Habilidade apagada com sucesso',
     };
   }
 }

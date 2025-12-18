@@ -60,7 +60,7 @@ export class ProjetosService {
   async findAll(
     usuarioId: number,
     options: IPaginationOptions,
-  ): Promise<IPaginationResult<Projeto>> {
+  ): Promise<IPaginationResult<ProjetoOutputDto>> {
     const { page, limit } = options;
     const [data, total] = await this.repository.findAndCount({
       where: { usuario_id: usuarioId },
@@ -73,13 +73,15 @@ export class ProjetosService {
         'descricao',
         'link',
       ],
-      relations: ['imagens', 'habilidades'],
+      relations: ['imagens', 'habilidades', 'habilidades.habilidade'],
       take: limit,
       skip: (page - 1) * limit,
     });
 
+    const formattedData = data.map((projeto) => new ProjetoOutputDto(projeto));
+
     return {
-      data,
+      data: formattedData,
       count: total,
       totalPages: Math.ceil(total / limit),
       currentPage: page,
@@ -89,7 +91,7 @@ export class ProjetosService {
   async findById(id: number, usuarioId: number): Promise<ProjetoOutputDto> {
     const projeto = await this.repository.findOne({
       where: { id, usuario_id: usuarioId },
-      relations: ['imagens', 'habilidades'],
+      relations: ['imagens', 'habilidades', 'habilidades.habilidade'],
     });
     if (!projeto) throw new NotFoundException('Projeto não encontrado');
 
@@ -154,15 +156,12 @@ export class ProjetosService {
   async remove(id: number, usuarioId: number): Promise<OutputDeleteDto> {
     const projeto = await this.repository.findOne({
       where: { id, usuario_id: usuarioId },
+      relations: ['imagens', 'habilidades'],
     });
 
     if (!projeto) throw new NotFoundException('Projeto não encontrado');
 
-    const deleted = await this.repository.softDelete(projeto.id);
-
-    if (deleted.affected !== 1) {
-      throw new NotFoundException('Projeto não foi apagado');
-    }
+    await this.repository.softRemove(projeto);
 
     return {
       message: 'Projeto apagado com sucesso',

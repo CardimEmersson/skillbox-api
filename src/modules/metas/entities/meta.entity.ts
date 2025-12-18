@@ -7,9 +7,11 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
 import { StatusMeta } from '../enums/status-meta.enum';
+import { MetaHabilidade } from './meta-habilidade.entity';
 
 @Entity('metas')
 export class Meta {
@@ -47,4 +49,9 @@ export class Meta {
 
   @DeleteDateColumn()
   deleted_at?: Date;
+
+  @OneToMany(() => MetaHabilidade, (metaHabilidade) => metaHabilidade.meta, {
+    cascade: true,
+  })
+  habilidades: MetaHabilidade[];
 }

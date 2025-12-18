@@ -13,6 +13,7 @@ import { Usuario } from '../../usuarios/entities/usuario.entity';
 import { NivelHabilidade } from '../enums/nivel-habilidade.enum';
 import { Exclude, Expose } from 'class-transformer';
 import { ProjetoHabilidade } from '../../projetos/entities/projeto-habilidade.entity';
+import { MetaHabilidade } from '../../metas/entities/meta-habilidade.entity';
 
 @Entity('habilidades')
 export class Habilidade {
@@ -51,6 +52,12 @@ export class Habilidade {
     (projetoHabilidade) => projetoHabilidade.habilidade,
   )
   projetos: ProjetoHabilidade[];
+
+  @OneToMany(
+    () => MetaHabilidade,
+    (metaHabilidade) => metaHabilidade.habilidade,
+  )
+  metas: MetaHabilidade[];
 
   @CreateDateColumn()
   created_at: Date;
