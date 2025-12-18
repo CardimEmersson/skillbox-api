@@ -52,4 +52,14 @@ export class UpdateProjetoDto {
   @IsArray()
   @IsNumberString({}, { each: true })
   excluir_imagens_ids?: (number | string)[];
+
+  @ApiProperty({
+    required: false,
+    type: [Number],
+    description: 'Array de IDs de habilidades a serem associadas ao projeto.',
+  })
+  @IsOptional()
+  @IsArray()
+  @IsNumberString({}, { each: true })
+  habilidades?: (number | string)[];
 }

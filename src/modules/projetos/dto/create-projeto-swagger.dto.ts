@@ -1,7 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
+  IsArray,
   IsDateString,
   IsEnum,
+  IsNumberString,
   IsOptional,
   IsString,
   MaxLength,
@@ -48,4 +50,14 @@ export class CreateProjetoSwaggerDto {
     required: false,
   })
   imagens?: any;
+
+  @ApiProperty({
+    required: false,
+    type: [Number],
+    description: 'Array de IDs de habilidades a serem associadas ao projeto.',
+  })
+  @IsOptional()
+  @IsArray()
+  @IsNumberString({}, { each: true })
+  habilidades?: (number | string)[];
 }

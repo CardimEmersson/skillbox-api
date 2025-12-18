@@ -7,10 +7,12 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
 import { NivelHabilidade } from '../enums/nivel-habilidade.enum';
 import { Exclude, Expose } from 'class-transformer';
+import { ProjetoHabilidade } from '../../projetos/entities/projeto-habilidade.entity';
 
 @Entity('habilidades')
 export class Habilidade {
@@ -43,6 +45,12 @@ export class Habilidade {
 
   @Column({ length: 100 })
   nome: string;
+
+  @OneToMany(
+    () => ProjetoHabilidade,
+    (projetoHabilidade) => projetoHabilidade.habilidade,
+  )
+  projetos: ProjetoHabilidade[];
 
   @CreateDateColumn()
   created_at: Date;

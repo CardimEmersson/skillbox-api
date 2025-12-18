@@ -4,6 +4,8 @@ import {
   IsEnum,
   IsDateString,
   MaxLength,
+  IsArray,
+  IsNumberString,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { TipoProjeto } from '../enums/tipo-projeto.enum';
@@ -38,4 +40,14 @@ export class CreateProjetoDto {
   @IsOptional()
   @IsString()
   link?: string;
+
+  @ApiProperty({
+    required: false,
+    type: [Number],
+    description: 'Array de IDs de habilidades a serem associadas ao projeto.',
+  })
+  @IsOptional()
+  @IsArray()
+  @IsNumberString({}, { each: true })
+  habilidades?: (number | string)[];
 }

@@ -26,6 +26,7 @@ import { UpdateProjetoSwaggerDto } from './dto/update-projeto-swagger.dto';
 import { UpdateProjetoDto } from './dto/update-projeto.dto';
 import { ImagensProjetosService } from './imagens-projetos.service';
 import { ImagemProjeto } from './entities/imagem-projeto.entity';
+import { ProjetosHabilidadesService } from './projetos-habilidades.service';
 
 @ApiTags('Projetos')
 @ApiBearerAuth()
@@ -35,6 +36,7 @@ export class ProjetosController {
   constructor(
     private readonly projetosService: ProjetosService,
     private readonly imagensProjetosService: ImagensProjetosService,
+    private readonly projetoHabilidadesService: ProjetosHabilidadesService,
   ) {}
 
   @Post()
@@ -54,14 +56,9 @@ export class ProjetosController {
     @UploadedFiles() imagens: Array<Express.Multer.File>,
     @User('userId') usuarioId: number,
   ) {
-    const urlImagens: string[] = [];
+    let urlImagens: string[] = [];
     try {
-      for (const imagem of imagens) {
-        const filename = saveImage(imagem, 'projetos');
-        const imagemUrl = `uploads/projetos/${filename}`;
-
-        urlImagens.push(imagemUrl);
-      }
+      urlImagens = this.createImagensProjeto(imagens);
 
       return this.projetosService.create(usuarioId, dto, urlImagens);
     } catch (error) {
@@ -110,7 +107,7 @@ export class ProjetosController {
     @UploadedFiles() imagens: Array<Express.Multer.File>,
     @User('userId') usuarioId: number,
   ) {
-    const urlImagensNovas: string[] = [];
+    let urlImagensNovas: string[] = [];
     let oldImages: ImagemProjeto[] = [];
     let deleteImages: ImagemProjeto[] = [];
 
@@ -130,39 +127,48 @@ export class ProjetosController {
         );
       }
 
-      if (imagens && imagens.length > 0) {
-        for (const imagem of imagens) {
-          const filename = saveImage(imagem, 'projetos');
-          const imagemUrl = `uploads/projetos/${filename}`;
-          urlImagensNovas.push(imagemUrl);
-        }
-      }
+      urlImagensNovas = this.createImagensProjeto(imagens);
+
+      const habilidadesProjeto =
+        await this.projetoHabilidadesService.findAllByProjeto(id);
+
+      const deleteHabilidadesProjeto = habilidadesProjeto?.filter(
+        (item) => !dto.habilidades?.includes(item.habilidade_id?.toString()),
+      );
+
+      const existingHabilidadeIds =
+        habilidadesProjeto?.map((item) => item.habilidade_id.toString()) ?? [];
+
+      const createdHabilidadesProjeto = dto.habilidades?.filter(
+        (habilidadeId) =>
+          !existingHabilidadeIds.includes(habilidadeId?.toString()),
+      );
 
       const updated = await this.projetosService.update(
         id,
         usuarioId,
         dto,
         urlImagensNovas,
+        deleteHabilidadesProjeto ?? [],
+        createdHabilidadesProjeto ?? [],
       );
 
       // apaga as imagens antigas
       if (updated && (oldImages?.length || deleteImages?.length)) {
-        for (const imagem of oldImages) {
-          if (fs.existsSync(imagem.imagem_url)) {
-            fs.unlinkSync(imagem.imagem_url);
-          }
-        }
-
-        for (const imagem of deleteImages) {
-          if (fs.existsSync(imagem.imagem_url)) {
-            fs.unlinkSync(imagem.imagem_url);
-          }
-        }
+        this.deleteImagensProjeto(oldImages);
+        this.deleteImagensProjeto(deleteImages);
       }
 
       return updated;
     } catch (error) {
       console.error('Erro ao editar projeto:', error);
+      if (urlImagensNovas.length) {
+        for (const imagem of urlImagensNovas) {
+          if (fs.existsSync(imagem)) {
+            fs.unlinkSync(imagem);
+          }
+        }
+      }
       throw error;
     }
   }
@@ -195,6 +201,26 @@ export class ProjetosController {
     } catch (error) {
       console.error('Erro ao deletar projeto:', error);
       throw error;
+    }
+  }
+
+  private createImagensProjeto(imagens: Array<Express.Multer.File>): string[] {
+    const urlImagens: string[] = [];
+    if (imagens && imagens.length > 0) {
+      for (const imagem of imagens) {
+        const filename = saveImage(imagem, 'projetos');
+        const imagemUrl = `uploads/projetos/${filename}`;
+        urlImagens.push(imagemUrl);
+      }
+    }
+    return urlImagens;
+  }
+
+  private deleteImagensProjeto(imagens: ImagemProjeto[]) {
+    for (const imagem of imagens) {
+      if (fs.existsSync(imagem.imagem_url)) {
+        fs.unlinkSync(imagem.imagem_url);
+      }
     }
   }
 }
