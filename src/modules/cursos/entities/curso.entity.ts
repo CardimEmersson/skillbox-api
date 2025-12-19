@@ -12,6 +12,7 @@ import {
 import { Usuario } from '../../usuarios/entities/usuario.entity';
 import { CursoHabilidade } from './curso-habilidade.entity';
 import { ProjetoCurso } from '../../projetos/entities/projeto-curso.entity';
+import { ImagemCurso } from './imagem-curso.entity';
 
 @Entity('cursos')
 export class Curso {
@@ -59,6 +60,9 @@ export class Curso {
     cascade: true,
   })
   projetos: ProjetoCurso[];
+
+  @OneToMany(() => ImagemCurso, (imagem) => imagem.curso)
+  imagens: ImagemCurso[];
 
   @CreateDateColumn()
   created_at: Date;

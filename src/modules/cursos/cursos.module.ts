@@ -6,10 +6,14 @@ import { CursosController } from './cursos.controller';
 import { Habilidade } from '../habilidades/entities/habilidade.entity';
 import { CursoHabilidade } from './entities/curso-habilidade.entity';
 import { CursosHabilidadesService } from './cursos-habilidades.service';
+import { ImagemCurso } from './entities/imagem-curso.entity';
+import { ImagensCursosService } from './imagens-cursos.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Curso, Habilidade, CursoHabilidade])],
+  imports: [
+    TypeOrmModule.forFeature([Curso, Habilidade, CursoHabilidade, ImagemCurso]),
+  ],
   controllers: [CursosController],
-  providers: [CursosService, CursosHabilidadesService],
+  providers: [CursosService, CursosHabilidadesService, ImagensCursosService],
 })
 export class CursosModule {}

@@ -1,5 +1,6 @@
 import { HabilidadeOutputDto } from '../../habilidades/dto/habilidade-output.dto';
 import { Curso } from '../entities/curso.entity';
+import { ImagemCursoOutputDto } from './imagem-curso-output.dto';
 
 export class CursoOutputDto {
   id: number;
@@ -11,6 +12,7 @@ export class CursoOutputDto {
   carga_horaria?: number;
   link?: string;
   habilidades?: Partial<HabilidadeOutputDto>[];
+  imagens?: Partial<ImagemCursoOutputDto>[];
 
   constructor(curso: Curso) {
     this.id = curso.id;
@@ -24,5 +26,10 @@ export class CursoOutputDto {
     this.habilidades = curso.habilidades?.map(
       (habilidade) => new HabilidadeOutputDto(habilidade.habilidade),
     );
+    this.imagens = curso.imagens?.map((imagem) => ({
+      id: imagem.id,
+      imagem_url: `${process.env.API_URL}/${imagem.imagem_url}`,
+      uploaded_at: imagem.uploaded_at,
+    }));
   }
 }

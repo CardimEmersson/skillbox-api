@@ -14,6 +14,8 @@ import {
 import { IPaginationOptions, IPaginationResult } from 'src/utils/pagination';
 import { CursoOutputDto } from './dto/curso-output.dto';
 import { CursoHabilidade } from './entities/curso-habilidade.entity';
+import { ImagemCurso } from './entities/imagem-curso.entity';
+import { UpdateCursoDto } from './dto/update-curso.dto';
 
 @Injectable()
 export class CursosService {
@@ -26,6 +28,7 @@ export class CursosService {
   async create(
     usuarioId: number,
     dto: CreateCursoDto,
+    urlImagens: string[],
   ): Promise<OutputCreateUpdateDto> {
     const cursoSalvo = await this.dataSource.transaction(
       async (transactionalEntityManager) => {
@@ -36,6 +39,12 @@ export class CursosService {
           usuario_id: usuarioId,
         });
         const cursoCriado = await transactionalEntityManager.save(curso);
+
+        await this.createImagensCurso(
+          urlImagens,
+          transactionalEntityManager,
+          cursoCriado,
+        );
 
         await this.createHabilidadesCurso(
           habilidades ?? [],
@@ -70,7 +79,7 @@ export class CursosService {
         'carga_horaria',
         'link',
       ],
-      relations: ['habilidades', 'habilidades.habilidade'],
+      relations: ['habilidades', 'habilidades.habilidade', 'imagens'],
       take: limit,
       skip: (page - 1) * limit,
     });
@@ -100,7 +109,7 @@ export class CursosService {
         'carga_horaria',
         'link',
       ],
-      relations: ['habilidades', 'habilidades.habilidade'],
+      relations: ['habilidades', 'habilidades.habilidade', 'imagens'],
     });
     if (!curso) throw new NotFoundException('Curso não encontrado');
 
@@ -113,6 +122,7 @@ export class CursosService {
     id: number,
     usuarioId: number,
     dto: CreateCursoDto,
+    urlImagens: string[],
     deleteHabilidadesCurso: CursoHabilidade[],
     createdHabilidadesCurso: (number | string)[],
   ): Promise<OutputCreateUpdateDto> {
@@ -131,6 +141,13 @@ export class CursosService {
         const cursoAtualizado = await transactionalEntityManager.save(
           Curso,
           curso,
+        );
+
+        await this.handleImagensCurso(
+          dto,
+          transactionalEntityManager,
+          urlImagens,
+          cursoAtualizado,
         );
 
         await this.deleteHabilidadesCurso(
@@ -157,7 +174,7 @@ export class CursosService {
   async remove(id: number, usuarioId: number): Promise<OutputDeleteDto> {
     const curso = await this.repository.findOne({
       where: { id, usuario_id: usuarioId },
-      relations: ['projetos'],
+      relations: ['projetos', 'imagens'],
     });
 
     if (!curso) {
@@ -229,5 +246,63 @@ export class CursosService {
         }
       }
     }
+  }
+
+  private async createImagensCurso(
+    urlImagens: string[],
+    transactionalEntityManager: EntityManager,
+    curso: Curso,
+  ) {
+    if (urlImagens && urlImagens.length > 0) {
+      const imagens = urlImagens.map((url) =>
+        transactionalEntityManager.create(ImagemCurso, {
+          curso_id: curso.id,
+          imagem_url: url,
+        }),
+      );
+      await transactionalEntityManager.save(imagens);
+    }
+  }
+
+  private async handleImagensCurso(
+    dto: UpdateCursoDto,
+    transactionalEntityManager: EntityManager,
+    urlImagens: string[],
+    cursoAtualizado: Curso,
+  ) {
+    // exclui imagens
+    if (dto.excluir_imagens_ids?.length) {
+      for (const id of dto.excluir_imagens_ids) {
+        const imagem = await transactionalEntityManager.findOne(ImagemCurso, {
+          where: { id: Number(id) },
+        });
+
+        if (imagem) {
+          await transactionalEntityManager.softDelete(ImagemCurso, imagem.id);
+        }
+      }
+    }
+
+    // atualiza imagens
+    if (dto.editar_imagens_ids?.length) {
+      for (const [index, id] of dto.editar_imagens_ids.entries()) {
+        const imagem = await transactionalEntityManager.findOne(ImagemCurso, {
+          where: { id: Number(id) },
+        });
+
+        if (imagem) {
+          imagem.imagem_url = urlImagens[index];
+          urlImagens.splice(index, 1);
+          await transactionalEntityManager.save(imagem);
+        }
+      }
+    }
+
+    // cria imagens
+    await this.createImagensCurso(
+      urlImagens,
+      transactionalEntityManager,
+      cursoAtualizado,
+    );
   }
 }
