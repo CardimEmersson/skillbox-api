@@ -9,6 +9,7 @@ import {
   IsNumberString,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 
 export class CreateCursoDto {
   @ApiProperty()
@@ -26,8 +27,13 @@ export class CreateCursoDto {
   @IsDateString()
   prazo_conclusao?: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ required: false, type: Boolean })
   @IsOptional()
+  @Transform(({ value }) => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return Boolean(value);
+  })
   @IsBoolean()
   em_andamento?: boolean;
 
@@ -36,8 +42,13 @@ export class CreateCursoDto {
   @IsString()
   instructor?: string;
 
-  @ApiProperty({ required: false, description: 'Carga horária em horas' })
+  @ApiProperty({
+    required: false,
+    description: 'Carga horária em horas',
+    type: Number,
+  })
   @IsOptional()
+  @Transform(({ value }) => (value ? Number.parseInt(value, 10) : undefined))
   @IsInt()
   carga_horaria?: number;
 

@@ -31,6 +31,15 @@ export class AuthService {
 
     return {
       access_token: this.jwtService.sign(payload),
+      user: {
+        id: usuario.id,
+        nome: usuario.nome,
+        sobrenome: usuario.sobrenome,
+        email: usuario.email,
+        telefone: usuario.telefone,
+        data_nascimento: usuario.dataNascimento,
+        avatar_url: usuario.avatar_url,
+      },
     };
   }
 }

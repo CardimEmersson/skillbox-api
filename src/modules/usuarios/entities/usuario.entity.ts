@@ -52,7 +52,7 @@ export class Usuario {
   @Column({
     type: 'enum',
     enum: NivelFormacao,
-    default: NivelFormacao.GRADUACAO,
+    default: NivelFormacao.FUNDAMENTAL,
   })
   nivel_formacao: NivelFormacao;
 
