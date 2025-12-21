@@ -34,4 +34,24 @@ export class CreateHabilidadeDto {
   @IsArray()
   @IsNumberString({}, { each: true })
   categorias?: (number | string)[];
+
+  @ApiProperty({
+    required: false,
+    type: [Number],
+    description: 'Array de IDs de projetos a serem associadas a habilidade.',
+  })
+  @IsOptional()
+  @IsArray()
+  @IsNumberString({}, { each: true })
+  projetos?: (number | string)[];
+
+  @ApiProperty({
+    required: false,
+    type: [Number],
+    description: 'Array de IDs de cursos a serem associadas a habilidade.',
+  })
+  @IsOptional()
+  @IsArray()
+  @IsNumberString({}, { each: true })
+  cursos?: (number | string)[];
 }

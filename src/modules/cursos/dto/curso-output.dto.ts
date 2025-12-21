@@ -23,9 +23,9 @@ export class CursoOutputDto {
     this.carga_horaria = curso.carga_horaria;
     this.instructor = curso.instructor;
     this.link = curso.link;
-    this.habilidades = curso.habilidades?.map(
-      (habilidade) => new HabilidadeOutputDto(habilidade.habilidade),
-    );
+    this.habilidades = curso.habilidades
+      ?.filter((cursoHabilidade) => cursoHabilidade.habilidade)
+      ?.map((habilidade) => new HabilidadeOutputDto(habilidade.habilidade));
     this.imagens = curso.imagens?.map((imagem) => ({
       id: imagem.id,
       imagem_url: `${process.env.API_URL}/${imagem.imagem_url}`,

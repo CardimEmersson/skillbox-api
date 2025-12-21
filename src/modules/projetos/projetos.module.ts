@@ -30,5 +30,6 @@ import { ProjetosCursosService } from './projetos-cursos.service';
     ProjetosCursosService,
     ProjetosHabilidadesService,
   ],
+  exports: [ProjetosService, ProjetosHabilidadesService],
 })
 export class ProjetosModule {}

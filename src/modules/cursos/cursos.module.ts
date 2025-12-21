@@ -15,5 +15,6 @@ import { ImagensCursosService } from './imagens-cursos.service';
   ],
   controllers: [CursosController],
   providers: [CursosService, CursosHabilidadesService, ImagensCursosService],
+  exports: [CursosService, CursosHabilidadesService],
 })
 export class CursosModule {}

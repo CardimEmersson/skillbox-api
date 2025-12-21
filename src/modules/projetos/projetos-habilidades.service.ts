@@ -23,4 +23,22 @@ export class ProjetosHabilidadesService {
       },
     });
   }
+
+  findAllByHabilidade(habilidadeId: number) {
+    return this.repository.find({
+      where: { habilidade_id: habilidadeId },
+      relations: ['projeto'],
+      select: {
+        projeto: {
+          id: true,
+          nome: true,
+          descricao: true,
+          tipo_projeto: true,
+          link: true,
+          periodo_inicial: true,
+          periodo_final: true,
+        },
+      },
+    });
+  }
 }

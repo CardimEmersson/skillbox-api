@@ -23,12 +23,12 @@ export class ProjetoOutputDto {
     this.tipo_projeto = projeto.tipo_projeto;
     this.descricao = projeto.descricao;
     this.link = projeto.link;
-    this.habilidades = projeto.habilidades?.map(
-      (habilidade) => new HabilidadeOutputDto(habilidade.habilidade),
-    );
-    this.cursos = projeto.cursos?.map(
-      (curso) => new ProjetoCursoOutputDto(curso.curso),
-    );
+    this.habilidades = projeto.habilidades
+      ?.filter((projetoHabilidade) => projetoHabilidade.habilidade)
+      ?.map((habilidade) => new HabilidadeOutputDto(habilidade.habilidade));
+    this.cursos = projeto.cursos
+      ?.filter((cursoProjeto) => cursoProjeto.curso)
+      ?.map((curso) => new ProjetoCursoOutputDto(curso.curso));
     this.imagens = projeto.imagens?.map((imagem) => ({
       id: imagem.id,
       imagem_url: `${process.env.API_URL}/${imagem.imagem_url}`,

@@ -15,8 +15,8 @@ export class MetaOutputDto {
     this.descricao = meta.descricao;
     this.prazo_conclusao = meta.prazo_conclusao;
     this.status = meta.status;
-    this.habilidades = meta.habilidades?.map(
-      (habilidade) => new HabilidadeOutputDto(habilidade.habilidade),
-    );
+    this.habilidades = meta.habilidades
+      ?.filter((metaHabilidade) => metaHabilidade.habilidade)
+      ?.map((habilidade) => new HabilidadeOutputDto(habilidade.habilidade));
   }
 }

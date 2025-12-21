@@ -14,6 +14,8 @@ import {
 import { HabilidadeOutputDto } from './dto/habilidade-output.dto';
 import { IPaginationOptions, IPaginationResult } from 'src/utils/pagination';
 import { CategoriaHabilidade } from '../categorias/entities/categoria-habilidade.entity';
+import { ProjetoHabilidade } from '../projetos/entities/projeto-habilidade.entity';
+import { CursoHabilidade } from '../cursos/entities/curso-habilidade.entity';
 
 @Injectable()
 export class HabilidadesService {
@@ -29,7 +31,7 @@ export class HabilidadesService {
   ): Promise<OutputCreateUpdateDto> {
     const habilidadeSalva = await this.dataSource.transaction(
       async (transactionalEntityManager) => {
-        const { categorias, ...habilidadeDto } = dto;
+        const { categorias, projetos, cursos, ...habilidadeDto } = dto;
 
         const habilidade = transactionalEntityManager.create(Habilidade, {
           ...habilidadeDto,
@@ -40,6 +42,18 @@ export class HabilidadesService {
 
         await this.createCategoriaHabilidade(
           categorias ?? [],
+          transactionalEntityManager,
+          habilidadeCriada,
+        );
+
+        await this.createProjetoHabilidade(
+          projetos ?? [],
+          transactionalEntityManager,
+          habilidadeCriada,
+        );
+
+        await this.createCursoHabilidade(
+          cursos ?? [],
           transactionalEntityManager,
           habilidadeCriada,
         );
@@ -62,7 +76,14 @@ export class HabilidadesService {
     const [data, total] = await this.repository.findAndCount({
       where: { usuario_id: usuarioId },
       select: ['id', 'nome', 'icone', 'nivel'],
-      relations: ['categorias', 'categorias.categoria'],
+      relations: [
+        'categorias',
+        'categorias.categoria',
+        'projetos',
+        'projetos.projeto',
+        'cursos',
+        'cursos.curso',
+      ],
       take: limit,
       skip: (page - 1) * limit,
     });
@@ -83,7 +104,14 @@ export class HabilidadesService {
     const habilidade = await this.repository.findOne({
       where: { id, usuario_id: usuarioId },
       select: ['id', 'nome', 'icone', 'nivel'],
-      relations: ['categorias', 'categorias.categoria'],
+      relations: [
+        'categorias',
+        'categorias.categoria',
+        'projetos',
+        'projetos.projeto',
+        'cursos',
+        'cursos.curso',
+      ],
     });
     if (!habilidade) throw new NotFoundException('Habilidade não encontrada');
 
@@ -98,6 +126,10 @@ export class HabilidadesService {
     dto: CreateHabilidadeDto,
     deleteCategoriasHabilidade: CategoriaHabilidade[],
     createdCategoriasHabilidade: (number | string)[],
+    deleteProjetosHabilidade: ProjetoHabilidade[],
+    createdProjetosHabilidade: (number | string)[],
+    deleteCursosHabilidade: CursoHabilidade[],
+    createdCursosHabilidade: (number | string)[],
   ): Promise<OutputCreateUpdateDto> {
     const habilidade = await this.repository.findOne({
       where: { id, usuario_id: usuarioId },
@@ -110,7 +142,7 @@ export class HabilidadesService {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { categorias, ...updateData } = dto;
+    const { categorias, cursos, projetos, ...updateData } = dto;
 
     Object.assign(habilidade, updateData);
     // const updated = await this.repository.save(habilidade);
@@ -129,6 +161,28 @@ export class HabilidadesService {
 
         await this.createCategoriaHabilidade(
           createdCategoriasHabilidade ?? [],
+          transactionalEntityManager,
+          habilidadeAtualizada,
+        );
+
+        await this.deleteProjetosHabilidade(
+          deleteProjetosHabilidade,
+          transactionalEntityManager,
+        );
+
+        await this.createCategoriaHabilidade(
+          createdProjetosHabilidade ?? [],
+          transactionalEntityManager,
+          habilidadeAtualizada,
+        );
+
+        await this.deleteCursosHabilidade(
+          deleteCursosHabilidade,
+          transactionalEntityManager,
+        );
+
+        await this.createCategoriaHabilidade(
+          createdCursosHabilidade ?? [],
           transactionalEntityManager,
           habilidadeAtualizada,
         );
@@ -218,6 +272,114 @@ export class HabilidadesService {
           await transactionalEntityManager.softDelete(CategoriaHabilidade, {
             categoria_id: categoriaHabilidadeExistente.categoria_id,
             habilidade_id: categoriaHabilidadeExistente.habilidade_id,
+          });
+        }
+      }
+    }
+  }
+
+  private async createProjetoHabilidade(
+    projetos: (number | string)[],
+    transactionalEntityManager: EntityManager,
+    habilidade: Habilidade,
+  ) {
+    if (projetos && projetos.length > 0) {
+      for (const projeto of projetos) {
+        const projetoId = Number(projeto);
+
+        const relacaoExistente = await transactionalEntityManager.findOne(
+          ProjetoHabilidade,
+          {
+            where: { projeto_id: projetoId, habilidade_id: habilidade.id },
+            withDeleted: true,
+          },
+        );
+
+        if (relacaoExistente?.deleted_at) {
+          await transactionalEntityManager.recover(relacaoExistente);
+        } else if (!relacaoExistente) {
+          const novaRelacao = transactionalEntityManager.create(
+            ProjetoHabilidade,
+            { projeto_id: projetoId, habilidade_id: habilidade.id },
+          );
+          await transactionalEntityManager.save(novaRelacao);
+        }
+      }
+    }
+  }
+
+  private async deleteProjetosHabilidade(
+    projetoshabilidade: ProjetoHabilidade[],
+    transactionalEntityManager: EntityManager,
+  ) {
+    if (projetoshabilidade?.length) {
+      for (const projetoHabilidade of projetoshabilidade) {
+        const projetoHabilidadeExistente =
+          await transactionalEntityManager.findOne(ProjetoHabilidade, {
+            where: {
+              habilidade_id: Number(projetoHabilidade.habilidade_id),
+              projeto_id: Number(projetoHabilidade.projeto_id),
+            },
+          });
+
+        if (projetoHabilidadeExistente) {
+          await transactionalEntityManager.softDelete(ProjetoHabilidade, {
+            projeto_id: projetoHabilidadeExistente.projeto_id,
+            habilidade_id: projetoHabilidadeExistente.habilidade_id,
+          });
+        }
+      }
+    }
+  }
+
+  private async createCursoHabilidade(
+    cursos: (number | string)[],
+    transactionalEntityManager: EntityManager,
+    habilidade: Habilidade,
+  ) {
+    if (cursos && cursos.length > 0) {
+      for (const curso of cursos) {
+        const cursoId = Number(curso);
+
+        const relacaoExistente = await transactionalEntityManager.findOne(
+          CursoHabilidade,
+          {
+            where: { curso_id: cursoId, habilidade_id: habilidade.id },
+            withDeleted: true,
+          },
+        );
+
+        if (relacaoExistente?.deleted_at) {
+          await transactionalEntityManager.recover(relacaoExistente);
+        } else if (!relacaoExistente) {
+          const novaRelacao = transactionalEntityManager.create(
+            CursoHabilidade,
+            { curso_id: cursoId, habilidade_id: habilidade.id },
+          );
+          await transactionalEntityManager.save(novaRelacao);
+        }
+      }
+    }
+  }
+
+  private async deleteCursosHabilidade(
+    cursoshabilidade: CursoHabilidade[],
+    transactionalEntityManager: EntityManager,
+  ) {
+    if (cursoshabilidade?.length) {
+      for (const cursoHabilidade of cursoshabilidade) {
+        const cursoHabilidadeExistente =
+          await transactionalEntityManager.findOne(CursoHabilidade, {
+            where: {
+              habilidade_id: Number(cursoHabilidade.habilidade_id),
+              curso_id: Number(cursoHabilidade.curso_id),
+            },
+          });
+
+        if (cursoHabilidadeExistente) {
+          await transactionalEntityManager.softDelete(CursoHabilidade, {
+            curso_id: cursoHabilidadeExistente.curso_id,
+            habilidade_id: cursoHabilidadeExistente.habilidade_id,
           });
         }
       }

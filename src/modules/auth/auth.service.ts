@@ -38,7 +38,9 @@ export class AuthService {
         email: usuario.email,
         telefone: usuario.telefone,
         data_nascimento: usuario.dataNascimento,
-        avatar_url: usuario.avatar_url,
+        avatar_url: usuario.avatar_url
+          ? `${process.env.API_URL}/${usuario.avatar_url}`
+          : '',
       },
     };
   }
