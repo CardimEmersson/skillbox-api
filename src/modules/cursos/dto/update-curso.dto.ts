@@ -25,7 +25,7 @@ export class UpdateCursoDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsDateString()
-  prazo_conclusao?: string;
+  prazo_conclusao?: string | null;
 
   @ApiProperty({ required: false, type: Boolean })
   @IsOptional()

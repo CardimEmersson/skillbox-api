@@ -2,6 +2,7 @@ import { HabilidadeOutputDto } from 'src/modules/habilidades/dto/habilidade-outp
 import { Projeto } from '../entities/projeto.entity';
 import { ImagemProjetoOutputDto } from './imagem-projeto-output.dto';
 import { ProjetoCursoOutputDto } from './projeto-curso-output.dto';
+import { ProjetoHabilidadeOutputDto } from './projeto-habilidade-output.dto';
 
 export class ProjetoOutputDto {
   id: number;
@@ -25,7 +26,9 @@ export class ProjetoOutputDto {
     this.link = projeto.link;
     this.habilidades = projeto.habilidades
       ?.filter((projetoHabilidade) => projetoHabilidade.habilidade)
-      ?.map((habilidade) => new HabilidadeOutputDto(habilidade.habilidade));
+      ?.map(
+        (habilidade) => new ProjetoHabilidadeOutputDto(habilidade.habilidade),
+      );
     this.cursos = projeto.cursos
       ?.filter((cursoProjeto) => cursoProjeto.curso)
       ?.map((curso) => new ProjetoCursoOutputDto(curso.curso));

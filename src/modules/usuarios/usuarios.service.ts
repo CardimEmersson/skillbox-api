@@ -45,8 +45,10 @@ export class UsuariosService {
     return usuario;
   }
 
-  async update(id: number, dto: UpdateUsuarioDto) {
-    const usuario = await this.usuarioRepository.findOne({ where: { id } });
+  async update(idUsuario: number, dto: UpdateUsuarioDto) {
+    const usuario = await this.usuarioRepository.findOne({
+      where: { id: idUsuario },
+    });
     if (!usuario) {
       throw new NotFoundException('Usuário não encontrado');
     }
@@ -56,7 +58,7 @@ export class UsuariosService {
         where: { email: dto.email },
       });
 
-      if (emailExiste && emailExiste.id !== id) {
+      if (emailExiste && emailExiste.id !== idUsuario) {
         throw new BadRequestException(
           'E-mail já está em uso por outro usuário',
         );
@@ -68,6 +70,14 @@ export class UsuariosService {
     }
 
     Object.assign(usuario, dto);
-    return this.usuarioRepository.save(usuario);
+    const updatedUsuario = await this.usuarioRepository.save(usuario);
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id, senha, ...data } = updatedUsuario;
+
+    return {
+      ...data,
+      avatar_url: `${process.env.API_URL}/${updatedUsuario.avatar_url}`,
+    };
   }
 }

@@ -16,6 +16,7 @@ import { IPaginationOptions, IPaginationResult } from 'src/utils/pagination';
 import { CategoriaHabilidade } from '../categorias/entities/categoria-habilidade.entity';
 import { ProjetoHabilidade } from '../projetos/entities/projeto-habilidade.entity';
 import { CursoHabilidade } from '../cursos/entities/curso-habilidade.entity';
+import { UpdateHabilidadeDto } from './dto/update-habilidade.dto';
 
 @Injectable()
 export class HabilidadesService {
@@ -123,7 +124,7 @@ export class HabilidadesService {
   async update(
     id: number,
     usuarioId: number,
-    dto: CreateHabilidadeDto,
+    dto: UpdateHabilidadeDto,
     deleteCategoriasHabilidade: CategoriaHabilidade[],
     createdCategoriasHabilidade: (number | string)[],
     deleteProjetosHabilidade: ProjetoHabilidade[],
@@ -137,12 +138,12 @@ export class HabilidadesService {
 
     if (!habilidade) throw new NotFoundException('Habilidade não encontrado');
 
-    if (!dto.icone) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { categorias, cursos, projetos, excluir_imagem, ...updateData } = dto;
+
+    if (!dto.icone && !excluir_imagem) {
       dto.icone = habilidade.icone;
     }
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { categorias, cursos, projetos, ...updateData } = dto;
 
     Object.assign(habilidade, updateData);
     // const updated = await this.repository.save(habilidade);

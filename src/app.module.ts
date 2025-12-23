@@ -10,6 +10,7 @@ import { ProjetosModule } from './modules/projetos/projetos.module';
 import { HabilidadesModule } from './modules/habilidades/habilidades.module';
 import { MetasModule } from './modules/metas/metas.module';
 import { CursosModule } from './modules/cursos/cursos.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { CursosModule } from './modules/cursos/cursos.module';
     HabilidadesModule,
     MetasModule,
     CursosModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -27,6 +27,7 @@ import { fileFilter, MAX_FILE_SIZE, saveImage } from 'src/utils/image';
 import { CategoriasHabilidadesService } from '../categorias/categorias-habilidades.service';
 import { ProjetosHabilidadesService } from '../projetos/projetos-habilidades.service';
 import { CursosHabilidadesService } from '../cursos/cursos-habilidades.service';
+import { UpdateHabilidadeDto } from './dto/update-habilidade.dto';
 
 @ApiTags('Habilidades')
 @ApiBearerAuth()
@@ -92,11 +93,11 @@ export class HabilidadesController {
   )
   async update(
     @Param('id') id: number,
-    @Body() dto: CreateHabilidadeDto,
+    @Body() dto: UpdateHabilidadeDto,
     @User('userId') usuarioId: number,
     @UploadedFile() icone?: Express.Multer.File,
   ) {
-    if (icone) {
+    if (icone || dto.excluir_imagem) {
       const usuario = await this.habilidadesService.findById(id, usuarioId);
 
       if (usuario.icone) {
@@ -106,8 +107,12 @@ export class HabilidadesController {
         }
       }
 
-      const filename = saveImage(icone, 'habilidades');
-      dto.icone = `uploads/habilidades/${filename}`;
+      if (icone) {
+        const filename = saveImage(icone, 'habilidades');
+        dto.icone = `uploads/habilidades/${filename}`;
+      } else {
+        dto.icone = '';
+      }
     }
 
     const { deleteCategoriasHabilidade, createdCategoriasHabilidade } =

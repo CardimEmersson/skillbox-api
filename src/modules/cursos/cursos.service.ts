@@ -37,7 +37,7 @@ export class CursosService {
         const curso = transactionalEntityManager.create(Curso, {
           ...cursoDto,
           usuario_id: usuarioId,
-        });
+        } as any);
         const cursoCriado = await transactionalEntityManager.save(curso);
 
         await this.createImagensCurso(
@@ -131,6 +131,10 @@ export class CursosService {
     });
 
     if (!curso) throw new NotFoundException('Curso não encontrada');
+
+    if (dto.em_andamento) {
+      dto.prazo_conclusao = null;
+    }
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { habilidades, ...updateData } = dto;
 
