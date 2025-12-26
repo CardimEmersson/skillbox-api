@@ -74,6 +74,15 @@ export class Usuario {
   @Column({ length: 255, nullable: true })
   site?: string;
 
+  @Column({ default: false })
+  email_confirmado: boolean;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  token_confirmacao?: string | null;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  token_recuperacao_senha?: string | null;
+
   @CreateDateColumn({ name: 'created_at' })
   created_at: Date;
 

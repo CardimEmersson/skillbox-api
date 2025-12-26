@@ -6,6 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'node:crypto';
 
 import { Usuario } from './entities/usuario.entity';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
@@ -27,10 +28,13 @@ export class UsuariosService {
       throw new BadRequestException('E-mail já cadastrado');
     }
 
+    const token_confirmacao = crypto.randomInt(100000, 1000000).toString();
+
     const senhaHash = await bcrypt.hash(dto.senha, 10);
 
     const usuario = this.usuarioRepository.create({
       ...dto,
+      token_confirmacao,
       senha: senhaHash,
     });
 
@@ -79,5 +83,56 @@ export class UsuariosService {
       ...data,
       avatar_url: `${process.env.API_URL}/${updatedUsuario.avatar_url}`,
     };
+  }
+
+  async confirmarEmail(email: string, token: string) {
+    const usuario = await this.usuarioRepository.findOne({
+      where: { email },
+    });
+
+    if (!usuario) {
+      throw new NotFoundException('Usuário não encontrado.');
+    }
+
+    if (usuario.token_confirmacao !== token) {
+      throw new BadRequestException('Token de confirmação inválido.');
+    }
+
+    usuario.email_confirmado = true;
+    usuario.token_confirmacao = null;
+
+    await this.usuarioRepository.save(usuario);
+  }
+
+  async esqueciSenha(email: string) {
+    const usuario = await this.usuarioRepository.findOne({ where: { email } });
+
+    if (!usuario) {
+      throw new NotFoundException('Usuário não encontrado.');
+    }
+
+    const token = crypto.randomInt(100000, 1000000).toString();
+    usuario.token_recuperacao_senha = token;
+
+    await this.usuarioRepository.save(usuario);
+
+    return usuario;
+  }
+
+  async redefinirSenha(email: string, token: string, novaSenha: string) {
+    const usuario = await this.usuarioRepository.findOne({ where: { email } });
+
+    if (!usuario) {
+      throw new NotFoundException('Usuário não encontrado.');
+    }
+
+    if (usuario.token_recuperacao_senha !== token) {
+      throw new BadRequestException('Código de recuperação inválido.');
+    }
+
+    usuario.senha = await bcrypt.hash(novaSenha, 10);
+    usuario.token_recuperacao_senha = null;
+
+    await this.usuarioRepository.save(usuario);
   }
 }

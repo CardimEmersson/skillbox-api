@@ -29,12 +29,19 @@ import { CreateUsuarioSwaggerDto } from './dto/create-usuario-swagger.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { fileFilter, MAX_FILE_SIZE, saveImage } from 'src/utils/image';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { EmailService } from '../email/email.service';
 import { User } from '../auth/user.decorator';
+import { ConfirmarEmailDto } from './dto/confirmar-email.dto';
+import { EsqueciSenhaDto } from './dto/esqueci-senha.dto';
+import { RedefinirSenhaDto } from './dto/redefinir-senha.dto';
 
 @ApiTags('Usuarios')
 @Controller('usuarios')
 export class UsuariosController {
-  constructor(private readonly usuariosService: UsuariosService) {}
+  constructor(
+    private readonly usuariosService: UsuariosService,
+    private readonly emailService: EmailService,
+  ) {}
 
   @Post()
   @ApiConsumes('multipart/form-data')
@@ -51,7 +58,7 @@ export class UsuariosController {
   )
   @ApiResponse({ status: 201, description: 'Usuário criado com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
-  create(
+  async create(
     @Body() dto: CreateUsuarioDto,
     @UploadedFile() avatar?: Express.Multer.File,
   ) {
@@ -61,7 +68,13 @@ export class UsuariosController {
       dto.avatar_url = `uploads/usuarios/${filename}`;
     }
 
-    return this.usuariosService.create(dto);
+    const usuario = await this.usuariosService.create(dto);
+
+    await this.emailService.enviarEmailConfirmacao(usuario);
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { senha, token_confirmacao, ...result } = usuario;
+    return result;
   }
 
   @UseGuards(JwtAuthGuard)
@@ -99,6 +112,40 @@ export class UsuariosController {
   @Get('me')
   me(@User('userId') userId: number) {
     return this.usuariosService.findById(userId);
+  }
+
+  @Post('confirmar-email')
+  @ApiResponse({ status: 200, description: 'E-mail confirmado com sucesso.' })
+  @ApiResponse({
+    status: 400,
+    description: 'Token inválido ou dados incorretos.',
+  })
+  @ApiResponse({ status: 404, description: 'Usuário não encontrado.' })
+  async confirmarEmail(@Body() dto: ConfirmarEmailDto) {
+    await this.usuariosService.confirmarEmail(dto.email, dto.token);
+    return { message: 'E-mail confirmado com sucesso!' };
+  }
+
+  @Post('esqueci-senha')
+  @ApiResponse({ status: 200, description: 'E-mail de recuperação enviado.' })
+  @ApiResponse({ status: 404, description: 'Usuário não encontrado.' })
+  async esqueciSenha(@Body() dto: EsqueciSenhaDto) {
+    const usuario = await this.usuariosService.esqueciSenha(dto.email);
+    await this.emailService.enviarEmailRecuperacaoSenha(usuario);
+    return { message: 'E-mail de recuperação enviado com sucesso.' };
+  }
+
+  @Post('redefinir-senha')
+  @ApiResponse({ status: 200, description: 'Senha redefinida com sucesso.' })
+  @ApiResponse({ status: 400, description: 'Código inválido.' })
+  @ApiResponse({ status: 404, description: 'Usuário não encontrado.' })
+  async redefinirSenha(@Body() dto: RedefinirSenhaDto) {
+    await this.usuariosService.redefinirSenha(
+      dto.email,
+      dto.token,
+      dto.novaSenha,
+    );
+    return { message: 'Senha redefinida com sucesso!' };
   }
 
   @Get(':id')

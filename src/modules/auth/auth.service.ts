@@ -21,6 +21,12 @@ export class AuthService {
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
+    if (!usuario.email_confirmado) {
+      throw new UnauthorizedException(
+        'E-mail não confirmado. Por favor, verifique sua caixa de entrada.',
+      );
+    }
+
     const senhaValida = await bcrypt.compare(dto.senha, usuario.senha);
 
     if (!senhaValida) {

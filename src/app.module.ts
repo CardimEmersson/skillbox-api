@@ -11,6 +11,7 @@ import { HabilidadesModule } from './modules/habilidades/habilidades.module';
 import { MetasModule } from './modules/metas/metas.module';
 import { CursosModule } from './modules/cursos/cursos.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { EmailModule } from './modules/email/email.module';
 
 @Module({
   imports: [
@@ -26,9 +27,9 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
         database: config.get('DB_NAME'),
         autoLoadEntities: true,
         synchronize: process.env.NODE_ENV !== 'production',
-        ssl: {
-          rejectUnauthorized: false,
-        },
+        // ssl: {
+        //   rejectUnauthorized: false,
+        // },
       }),
     }),
     UsuariosModule,
@@ -39,6 +40,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     MetasModule,
     CursosModule,
     DashboardModule,
+    EmailModule,
   ],
   controllers: [AppController],
   providers: [AppService],
