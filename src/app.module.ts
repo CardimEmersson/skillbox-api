@@ -26,6 +26,9 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
         database: config.get('DB_NAME'),
         autoLoadEntities: true,
         synchronize: process.env.NODE_ENV !== 'production',
+        ssl: {
+          rejectUnauthorized: false,
+        },
       }),
     }),
     UsuariosModule,
