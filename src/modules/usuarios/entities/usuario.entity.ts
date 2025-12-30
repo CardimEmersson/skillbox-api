@@ -36,7 +36,9 @@ export class Usuario {
   @Expose()
   get avatar(): string | null {
     if (!this.avatar_url) return null;
-    return `${process.env.API_URL}/${this.avatar_url}`;
+    return this.avatar_url.startsWith('http')
+      ? this.avatar_url
+      : `${process.env.API_URL}/${this.avatar_url}`;
   }
 
   @Column({ length: 255, nullable: true })

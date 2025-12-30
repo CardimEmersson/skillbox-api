@@ -49,6 +49,16 @@ export class UsuariosService {
     return usuario;
   }
 
+  async findByEmail(email: string) {
+    if (!email) {
+      throw new BadRequestException('E-mail não informado');
+    }
+
+    const usuario = await this.usuarioRepository.findOne({ where: { email } });
+
+    return usuario;
+  }
+
   async update(idUsuario: number, dto: UpdateUsuarioDto) {
     const usuario = await this.usuarioRepository.findOne({
       where: { id: idUsuario },
@@ -81,7 +91,11 @@ export class UsuariosService {
 
     return {
       ...data,
-      avatar_url: `${process.env.API_URL}/${updatedUsuario.avatar_url}`,
+      avatar_url:
+        updatedUsuario.avatar_url &&
+        updatedUsuario.avatar_url.startsWith('http')
+          ? updatedUsuario.avatar_url
+          : `${process.env.API_URL}/${updatedUsuario.avatar_url}`,
     };
   }
 
@@ -134,5 +148,22 @@ export class UsuariosService {
     usuario.token_recuperacao_senha = null;
 
     await this.usuarioRepository.save(usuario);
+  }
+
+  async createSocialUser(data: {
+    nome: string;
+    sobrenome: string;
+    email: string;
+    avatar_url?: string;
+  }) {
+    const senhaRandom = crypto.randomBytes(16).toString('hex');
+    const hash = await bcrypt.hash(senhaRandom, 10);
+
+    const usuario = this.usuarioRepository.create({
+      ...data,
+      senha: hash,
+    });
+
+    return this.usuarioRepository.save(usuario);
   }
 }

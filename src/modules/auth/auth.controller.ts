@@ -14,4 +14,14 @@ export class AuthController {
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
   }
+
+  @Post('google')
+  async googleLogin(@Body() body: { token: string }) {
+    return this.authService.loginWithGoogle(body.token);
+  }
+
+  @Post('facebook')
+  async facebookLogin(@Body() body: { token: string }) {
+    return this.authService.loginWithFacebook(body.token);
+  }
 }
