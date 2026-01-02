@@ -34,6 +34,7 @@ import { User } from '../auth/user.decorator';
 import { ConfirmarEmailDto } from './dto/confirmar-email.dto';
 import { EsqueciSenhaDto } from './dto/esqueci-senha.dto';
 import { RedefinirSenhaDto } from './dto/redefinir-senha.dto';
+import { ReenviarEmailDto } from './dto/reenviar-email.dto';
 
 @ApiTags('Usuarios')
 @Controller('usuarios')
@@ -112,6 +113,15 @@ export class UsuariosController {
   @Get('me')
   me(@User('userId') userId: number) {
     return this.usuariosService.findById(userId);
+  }
+
+  @Post('reenviar-email')
+  @ApiResponse({ status: 200, description: 'E-mail reenviado com sucesso.' })
+  @ApiResponse({ status: 404, description: 'Usuário não encontrado.' })
+  async reenviarEmail(@Body() dto: ReenviarEmailDto) {
+    const usuario = await this.usuariosService.reenviarToken(dto.email);
+    await this.emailService.enviarEmailConfirmacao(usuario);
+    return { message: 'E-mail enviado com sucesso!' };
   }
 
   @Post('confirmar-email')

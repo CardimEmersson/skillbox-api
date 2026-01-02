@@ -118,6 +118,24 @@ export class UsuariosService {
     await this.usuarioRepository.save(usuario);
   }
 
+  async reenviarToken(email: string) {
+    const usuario = await this.usuarioRepository.findOne({
+      where: { email },
+    });
+
+    if (!usuario) {
+      throw new NotFoundException('Usuário não encontrado.');
+    }
+
+    if (usuario.email_confirmado) {
+      throw new BadRequestException('Este e-mail já foi confirmado.');
+    }
+
+    usuario.token_confirmacao = crypto.randomInt(100000, 1000000).toString();
+
+    return await this.usuarioRepository.save(usuario);
+  }
+
   async esqueciSenha(email: string) {
     const usuario = await this.usuarioRepository.findOne({ where: { email } });
 
