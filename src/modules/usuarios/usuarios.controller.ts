@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   Controller,
   Post,
@@ -73,8 +74,13 @@ export class UsuariosController {
 
     await this.emailService.enviarEmailConfirmacao(usuario);
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { senha, token_confirmacao, ...result } = usuario;
+    const {
+      senha,
+      token_confirmacao,
+      email_confirmado,
+      token_recuperacao_senha,
+      ...result
+    } = usuario;
     return result;
   }
 
