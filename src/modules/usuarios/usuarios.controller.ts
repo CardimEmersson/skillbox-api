@@ -4,6 +4,7 @@ import {
   Post,
   Put,
   Body,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -113,6 +114,14 @@ export class UsuariosController {
     }
 
     return this.usuariosService.update(userId, dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('me')
+  @ApiResponse({ status: 200, description: 'Conta excluída com sucesso' })
+  async remove(@User('userId') userId: number) {
+    await this.usuariosService.remove(userId);
+    return { message: 'Conta excluída com sucesso' };
   }
 
   @UseGuards(JwtAuthGuard)

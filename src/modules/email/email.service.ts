@@ -12,11 +12,10 @@ export class EmailService {
 
   async enviarEmailConfirmacao(usuario: Usuario) {
     const token = usuario.token_confirmacao;
-    this.logger.log(`Código de confirmação (DEV): ${token}`);
 
     const deepLink = `skillbox://confirm-account?email=${usuario.email}&token=${token}`;
 
-    const { error } = await resend.emails.send({
+    const { error, data } = await resend.emails.send({
       from: process.env.MAIL_FROM ?? 'skillbox',
       to: [usuario?.email],
       // to: [process.env.MAIL_TO ?? ''],
@@ -34,15 +33,16 @@ export class EmailService {
     if (error) {
       return console.error({ error });
     }
+
+    console.log(`Email enviado ${usuario.email}: `, data);
   }
 
   async enviarEmailRecuperacaoSenha(usuario: Usuario) {
     const token = usuario.token_recuperacao_senha;
-    this.logger.log(`Código de recuperação (DEV): ${token}`);
 
     const deepLink = `skillbox://reset-password?email=${usuario.email}&token=${token}`;
 
-    const { error } = await resend.emails.send({
+    const { error, data } = await resend.emails.send({
       from: process.env.MAIL_FROM ?? 'skillbox',
       to: [usuario.email],
       // to: [process.env.MAIL_TO ?? ''],
@@ -60,5 +60,7 @@ export class EmailService {
     if (error) {
       return console.error({ error });
     }
+
+    console.log(`Email enviado ${usuario.email}: `, data);
   }
 }

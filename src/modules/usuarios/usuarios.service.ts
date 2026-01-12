@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'node:crypto';
+import * as fs from 'node:fs';
 
 import { Usuario } from './entities/usuario.entity';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
@@ -183,5 +184,17 @@ export class UsuariosService {
     });
 
     return this.usuarioRepository.save(usuario);
+  }
+
+  async remove(id: number) {
+    const usuario = await this.findById(id);
+
+    if (usuario.avatar_url && !usuario.avatar_url.startsWith('http')) {
+      const filePath = `./uploads/usuarios/${usuario.avatar_url.split('/').pop()}`;
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+    return await this.usuarioRepository.softRemove(usuario);
   }
 }
