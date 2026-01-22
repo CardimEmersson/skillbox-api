@@ -34,7 +34,7 @@ export class ProjetoOutputDto {
       ?.map((curso) => new ProjetoCursoOutputDto(curso.curso));
     this.imagens = projeto.imagens?.map((imagem) => ({
       id: imagem.id,
-      imagem_url: `${process.env.API_URL}/${imagem.imagem_url}`,
+      imagem_url: imagem.imagem_url,
       uploaded_at: imagem.uploaded_at,
     }));
   }

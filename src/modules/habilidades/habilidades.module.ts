@@ -10,6 +10,7 @@ import { CursoHabilidade } from '../cursos/entities/curso-habilidade.entity';
 import { Projeto } from '../projetos/entities/projeto.entity';
 import { ProjetosModule } from '../projetos/projetos.module';
 import { CursosModule } from '../cursos/cursos.module';
+import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { CursosModule } from '../cursos/cursos.module';
     CategoriasModule,
     ProjetosModule,
     CursosModule,
+    CloudinaryModule,
   ],
   controllers: [HabilidadesController],
   providers: [HabilidadesService],

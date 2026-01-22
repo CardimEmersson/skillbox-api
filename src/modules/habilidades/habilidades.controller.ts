@@ -21,13 +21,13 @@ import { CreateHabilidadeDto } from './dto/create-habilidade.dto';
 import { User } from '../auth/user.decorator';
 import { CreateHabilidadeSwaggerDto } from './dto/create-habilidade-swagger.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
-import * as fs from 'node:fs';
 import * as multer from 'multer';
-import { fileFilter, MAX_FILE_SIZE, saveImage } from 'src/utils/image';
+import { fileFilter, MAX_FILE_SIZE } from 'src/utils/image';
 import { CategoriasHabilidadesService } from '../categorias/categorias-habilidades.service';
 import { ProjetosHabilidadesService } from '../projetos/projetos-habilidades.service';
 import { CursosHabilidadesService } from '../cursos/cursos-habilidades.service';
 import { UpdateHabilidadeDto } from './dto/update-habilidade.dto';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @ApiTags('Habilidades')
 @ApiBearerAuth()
@@ -39,6 +39,7 @@ export class HabilidadesController {
     private readonly categoriasHabilidadesService: CategoriasHabilidadesService,
     private readonly projetosHabilidadesService: ProjetosHabilidadesService,
     private readonly cursosHabilidadesService: CursosHabilidadesService,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   @Post()
@@ -54,15 +55,17 @@ export class HabilidadesController {
       limits: { fileSize: MAX_FILE_SIZE },
     }),
   )
-  create(
+  async create(
     @Body() dto: CreateHabilidadeDto,
     @User('userId') usuarioId: number,
     @UploadedFile() icone?: Express.Multer.File,
   ) {
     if (icone) {
-      const filename = saveImage(icone, 'habilidades');
-
-      dto.icone = `uploads/habilidades/${filename}`;
+      const result = await this.cloudinaryService.uploadImage(
+        icone,
+        'habilidades',
+      );
+      dto.icone = result?.secure_url ?? '';
     }
 
     return this.habilidadesService.create(usuarioId, dto);
@@ -98,18 +101,18 @@ export class HabilidadesController {
     @UploadedFile() icone?: Express.Multer.File,
   ) {
     if (icone || dto.excluir_imagem) {
-      const usuario = await this.habilidadesService.findById(id, usuarioId);
+      const habilidade = await this.habilidadesService.findById(id, usuarioId);
 
-      if (usuario.icone) {
-        const oldPath = `./uploads/habilidades/${usuario.icone.split('/').pop()}`;
-        if (fs.existsSync(oldPath)) {
-          fs.unlinkSync(oldPath);
-        }
+      if (habilidade.icone) {
+        await this.cloudinaryService.deleteImage(habilidade.icone);
       }
 
       if (icone) {
-        const filename = saveImage(icone, 'habilidades');
-        dto.icone = `uploads/habilidades/${filename}`;
+        const result = await this.cloudinaryService.uploadImage(
+          icone,
+          'habilidades',
+        );
+        dto.icone = result?.secure_url ?? '';
       } else {
         dto.icone = '';
       }
@@ -146,14 +149,6 @@ export class HabilidadesController {
 
     if (!habilidade) {
       throw new NotFoundException('Habilidade não encontrada');
-    }
-
-    if (habilidade.icone) {
-      const oldPath = `./uploads/habilidades/${habilidade.icone.split('/').pop()}`;
-
-      if (fs.existsSync(oldPath)) {
-        fs.unlinkSync(oldPath);
-      }
     }
 
     return this.habilidadesService.remove(habilidade.id);

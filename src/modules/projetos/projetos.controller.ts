@@ -19,9 +19,8 @@ import { ProjetosService } from './projetos.service';
 import { CreateProjetoDto } from './dto/create-projeto.dto';
 import { User } from '../auth/user.decorator';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { fileFilter, MAX_FILE_SIZE, saveImage } from 'src/utils/image';
+import { fileFilter, MAX_FILE_SIZE } from 'src/utils/image';
 import { CreateProjetoSwaggerDto } from './dto/create-projeto-swagger.dto';
-import * as fs from 'node:fs';
 import { UpdateProjetoSwaggerDto } from './dto/update-projeto-swagger.dto';
 import { UpdateProjetoDto } from './dto/update-projeto.dto';
 import { ImagensProjetosService } from './imagens-projetos.service';
@@ -30,6 +29,7 @@ import { ProjetosHabilidadesService } from './projetos-habilidades.service';
 import { ProjetoHabilidade } from './entities/projeto-habilidade.entity';
 import { ProjetoCurso } from './entities/projeto-curso.entity';
 import { ProjetosCursosService } from './projetos-cursos.service';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @ApiTags('Projetos')
 @ApiBearerAuth()
@@ -41,6 +41,7 @@ export class ProjetosController {
     private readonly imagensProjetosService: ImagensProjetosService,
     private readonly projetoHabilidadesService: ProjetosHabilidadesService,
     private readonly projetoCursosService: ProjetosCursosService,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   @Post()
@@ -62,16 +63,14 @@ export class ProjetosController {
   ) {
     let urlImagens: string[] = [];
     try {
-      urlImagens = this.createImagensProjeto(imagens);
+      urlImagens = await this.createImagensProjeto(imagens);
 
-      return this.projetosService.create(usuarioId, dto, urlImagens);
+      return await this.projetosService.create(usuarioId, dto, urlImagens);
     } catch (error) {
       console.error('Erro ao criar projeto:', error);
       if (urlImagens.length) {
-        for (const imagem of urlImagens) {
-          if (fs.existsSync(imagem)) {
-            fs.unlinkSync(imagem);
-          }
+        for (const imagemUrl of urlImagens) {
+          await this.cloudinaryService.deleteImage(imagemUrl);
         }
       }
       throw error;
@@ -131,7 +130,7 @@ export class ProjetosController {
         );
       }
 
-      urlImagensNovas = this.createImagensProjeto(imagens);
+      urlImagensNovas = await this.createImagensProjeto(imagens);
 
       const { deleteHabilidadesProjeto, createdHabilidadesProjeto } =
         await this.handleHabilidadesProjeto(id, dto);
@@ -152,18 +151,16 @@ export class ProjetosController {
 
       // apaga as imagens antigas
       if (updated && (oldImages?.length || deleteImages?.length)) {
-        this.deleteImagensProjeto(oldImages);
-        this.deleteImagensProjeto(deleteImages);
+        await this.deleteImagensProjeto(oldImages);
+        await this.deleteImagensProjeto(deleteImages);
       }
 
       return updated;
     } catch (error) {
       console.error('Erro ao editar projeto:', error);
       if (urlImagensNovas.length) {
-        for (const imagem of urlImagensNovas) {
-          if (fs.existsSync(imagem)) {
-            fs.unlinkSync(imagem);
-          }
+        for (const imagemUrl of urlImagensNovas) {
+          await this.cloudinaryService.deleteImage(imagemUrl);
         }
       }
       throw error;
@@ -175,48 +172,31 @@ export class ProjetosController {
     @Param('id', ParseIntPipe) id: number,
     @User('userId') usuarioId: number,
   ) {
-    try {
-      const imagensProjeto =
-        await this.imagensProjetosService.findAllByProjeto(id);
-
-      let deleteImagensProjeto: string[] = [];
-      if (imagensProjeto?.length) {
-        deleteImagensProjeto = imagensProjeto.map((item) => item.imagem_url);
-      }
-
-      const deleted = await this.projetosService.remove(id, usuarioId);
-
-      if (deleted && deleteImagensProjeto?.length) {
-        for (const imagem of deleteImagensProjeto) {
-          if (fs.existsSync(imagem)) {
-            fs.unlinkSync(imagem);
-          }
-        }
-      }
-
-      return deleted;
-    } catch (error) {
-      console.error('Erro ao deletar projeto:', error);
-      throw error;
-    }
+    return this.projetosService.remove(id, usuarioId);
   }
 
-  private createImagensProjeto(imagens: Array<Express.Multer.File>): string[] {
+  private async createImagensProjeto(
+    imagens: Array<Express.Multer.File>,
+  ): Promise<string[]> {
     const urlImagens: string[] = [];
     if (imagens && imagens.length > 0) {
       for (const imagem of imagens) {
-        const filename = saveImage(imagem, 'projetos');
-        const imagemUrl = `uploads/projetos/${filename}`;
-        urlImagens.push(imagemUrl);
+        const result = await this.cloudinaryService.uploadImage(
+          imagem,
+          'projetos',
+        );
+        if (result?.secure_url) {
+          urlImagens.push(result.secure_url);
+        }
       }
     }
     return urlImagens;
   }
 
-  private deleteImagensProjeto(imagens: ImagemProjeto[]) {
+  private async deleteImagensProjeto(imagens: ImagemProjeto[]) {
     for (const imagem of imagens) {
-      if (fs.existsSync(imagem.imagem_url)) {
-        fs.unlinkSync(imagem.imagem_url);
+      if (imagem.imagem_url) {
+        await this.cloudinaryService.deleteImage(imagem.imagem_url);
       }
     }
   }

@@ -11,6 +11,7 @@ import { Habilidade } from '../habilidades/entities/habilidade.entity';
 import { ProjetoCurso } from './entities/projeto-curso.entity';
 import { Curso } from '../cursos/entities/curso.entity';
 import { ProjetosCursosService } from './projetos-cursos.service';
+import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { ProjetosCursosService } from './projetos-cursos.service';
       ProjetoCurso,
       Curso,
     ]),
+    CloudinaryModule,
   ],
   controllers: [ProjetosController],
   providers: [

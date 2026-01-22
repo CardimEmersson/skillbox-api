@@ -15,9 +15,7 @@ export class HabilidadeOutputDto {
   constructor(habilidade: Habilidade) {
     this.id = habilidade.id;
     this.nome = habilidade.nome;
-    this.icone = habilidade.icone
-      ? `${process.env.API_URL}/${habilidade.icone}`
-      : '';
+    this.icone = habilidade.icone;
     this.nivel = habilidade.nivel;
     this.categorias = habilidade.categorias
       ?.filter((categoriaHabilidade) => categoriaHabilidade.categoria)

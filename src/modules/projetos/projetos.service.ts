@@ -13,6 +13,7 @@ import { ImagemProjeto } from './entities/imagem-projeto.entity';
 import { UpdateProjetoDto } from './dto/update-projeto.dto';
 import { ProjetoHabilidade } from './entities/projeto-habilidade.entity';
 import { ProjetoCurso } from './entities/projeto-curso.entity';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Injectable()
 export class ProjetosService {
@@ -20,6 +21,7 @@ export class ProjetosService {
     @InjectRepository(Projeto)
     private readonly repository: Repository<Projeto>,
     private readonly dataSource: DataSource,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   async create(
@@ -209,6 +211,12 @@ export class ProjetosService {
     });
 
     if (!projeto) throw new NotFoundException('Projeto não encontrado');
+
+    if (projeto.imagens?.length) {
+      for (const imagem of projeto.imagens) {
+        await this.cloudinaryService.deleteImage(imagem.imagem_url);
+      }
+    }
 
     await this.repository.softRemove(projeto);
 

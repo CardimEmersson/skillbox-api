@@ -12,6 +12,7 @@ import { MetasModule } from './modules/metas/metas.module';
 import { CursosModule } from './modules/cursos/cursos.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { EmailModule } from './modules/email/email.module';
+import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { EmailModule } from './modules/email/email.module';
     CursosModule,
     DashboardModule,
     EmailModule,
+    CloudinaryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

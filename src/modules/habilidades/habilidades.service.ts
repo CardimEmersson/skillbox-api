@@ -17,6 +17,7 @@ import { CategoriaHabilidade } from '../categorias/entities/categoria-habilidade
 import { ProjetoHabilidade } from '../projetos/entities/projeto-habilidade.entity';
 import { CursoHabilidade } from '../cursos/entities/curso-habilidade.entity';
 import { UpdateHabilidadeDto } from './dto/update-habilidade.dto';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Injectable()
 export class HabilidadesService {
@@ -24,6 +25,7 @@ export class HabilidadesService {
     @InjectRepository(Habilidade)
     private readonly repository: Repository<Habilidade>,
     private readonly dataSource: DataSource,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   async create(
@@ -216,6 +218,10 @@ export class HabilidadesService {
       throw new BadRequestException(
         'Não é possível excluir uma habilidade que está associada a projetos, metas ou cursos.',
       );
+    }
+
+    if (habilidade.icone) {
+      await this.cloudinaryService.deleteImage(habilidade.icone);
     }
 
     await this.repository.softRemove(habilidade);

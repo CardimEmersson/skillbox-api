@@ -16,6 +16,7 @@ import { CursoOutputDto } from './dto/curso-output.dto';
 import { CursoHabilidade } from './entities/curso-habilidade.entity';
 import { ImagemCurso } from './entities/imagem-curso.entity';
 import { UpdateCursoDto } from './dto/update-curso.dto';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Injectable()
 export class CursosService {
@@ -23,6 +24,7 @@ export class CursosService {
     @InjectRepository(Curso)
     private readonly repository: Repository<Curso>,
     private readonly dataSource: DataSource,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   async create(
@@ -189,6 +191,12 @@ export class CursosService {
       throw new BadRequestException(
         'Não é possível excluir um curso que está associado a um projeto',
       );
+    }
+
+    if (curso.imagens?.length) {
+      for (const imagem of curso.imagens) {
+        await this.cloudinaryService.deleteImage(imagem.imagem_url);
+      }
     }
 
     await this.repository.softRemove(curso);

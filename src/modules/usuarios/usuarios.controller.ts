@@ -13,7 +13,6 @@ import {
   UploadedFile,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import * as fs from 'node:fs';
 import * as multer from 'multer';
 import { UsuariosService } from './usuarios.service';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
@@ -29,7 +28,7 @@ import { Usuario } from './entities/usuario.entity';
 import { AuthGuard } from '@nestjs/passport';
 import { CreateUsuarioSwaggerDto } from './dto/create-usuario-swagger.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
-import { fileFilter, MAX_FILE_SIZE, saveImage } from 'src/utils/image';
+import { fileFilter, MAX_FILE_SIZE } from 'src/utils/image';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { EmailService } from '../email/email.service';
 import { User } from '../auth/user.decorator';
@@ -37,6 +36,7 @@ import { ConfirmarEmailDto } from './dto/confirmar-email.dto';
 import { EsqueciSenhaDto } from './dto/esqueci-senha.dto';
 import { RedefinirSenhaDto } from './dto/redefinir-senha.dto';
 import { ReenviarEmailDto } from './dto/reenviar-email.dto';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @ApiTags('Usuarios')
 @Controller('usuarios')
@@ -44,6 +44,7 @@ export class UsuariosController {
   constructor(
     private readonly usuariosService: UsuariosService,
     private readonly emailService: EmailService,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   @Post()
@@ -66,9 +67,11 @@ export class UsuariosController {
     @UploadedFile() avatar?: Express.Multer.File,
   ) {
     if (avatar) {
-      const filename = saveImage(avatar, 'usuarios');
-
-      dto.avatar_url = `uploads/usuarios/${filename}`;
+      const result = await this.cloudinaryService.uploadImage(
+        avatar,
+        'usuarios',
+      );
+      dto.avatar_url = result?.secure_url ?? '';
     }
 
     const usuario = await this.usuariosService.create(dto);
@@ -103,14 +106,14 @@ export class UsuariosController {
       const usuario = await this.usuariosService.findById(userId);
 
       if (usuario.avatar_url) {
-        const oldPath = `./uploads/usuarios/${usuario.avatar_url.split('/').pop()}`;
-        if (fs.existsSync(oldPath)) {
-          fs.unlinkSync(oldPath);
-        }
+        await this.cloudinaryService.deleteImage(usuario.avatar_url);
       }
 
-      const filename = saveImage(avatar, 'usuarios');
-      dto.avatar_url = `uploads/usuarios/${filename}`;
+      const result = await this.cloudinaryService.uploadImage(
+        avatar,
+        'usuarios',
+      );
+      dto.avatar_url = result?.secure_url ?? '';
     }
 
     return this.usuariosService.update(userId, dto);

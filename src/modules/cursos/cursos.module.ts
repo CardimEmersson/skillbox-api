@@ -8,10 +8,12 @@ import { CursoHabilidade } from './entities/curso-habilidade.entity';
 import { CursosHabilidadesService } from './cursos-habilidades.service';
 import { ImagemCurso } from './entities/imagem-curso.entity';
 import { ImagensCursosService } from './imagens-cursos.service';
+import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Curso, Habilidade, CursoHabilidade, ImagemCurso]),
+    CloudinaryModule,
   ],
   controllers: [CursosController],
   providers: [CursosService, CursosHabilidadesService, ImagensCursosService],

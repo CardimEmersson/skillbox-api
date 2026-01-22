@@ -36,7 +36,9 @@ export class Habilidade {
   @Expose()
   get icone_url(): string | null {
     if (!this.icone) return null;
-    return `${process.env.API_URL}/${this.icone}`;
+    return this.icone.startsWith('http')
+      ? this.icone
+      : `${process.env.API_URL}/${this.icone}`;
   }
 
   @Column({
